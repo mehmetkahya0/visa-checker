@@ -306,7 +306,7 @@ class TelegramService {
         "• Bot 7/24 çalışarak sürekli randevuları kontrol eder",
         "• Uygun randevu bulunduğunda otomatik bildirim alırsınız",
         "• /bildirim\\_ac ile her kontrol sonucunu görebilirsiniz",
-        "• Deneme bildirimleri bot'un aktif çalıştığını doğrular",
+        "• Deneme bildirimleri bot\\'un aktif çalıştığını doğrular",
         "",
         "❓ Sorun yaşıyorsanız /ping ile bot bağlantısını test edin\\.",
         "- Mehmet Kahya"
@@ -559,8 +559,8 @@ class TelegramService {
           `📊 Mevcut Durum: ${currentStatus}`,
           "",
           "📋 *Kullanım:*",
-          "/bildirim\\_ac \\- Bildirimleri aç",
-          "/bildirim\\_kapat \\- Bildirimleri kapat",
+          "/bildirim_ac - Bildirimleri aç",
+          "/bildirim_kapat - Bildirimleri kapat",
           "",
           "💡 Bu özellik açıldığında bot her 5 dakikalık kontrol sonucunu bildirir \\(randevu bulunmasa bile\\)\\.",
           "",
@@ -581,7 +581,7 @@ class TelegramService {
         await ctx.reply(
           "🔔 *Deneme Bildirimleri Açıldı*\n\n" +
           "✅ Artık her 5 dakikalık otomatik kontrol sonucu size bildirilecek\\.\n\n" +
-          "📊 Bu sayede randevu bulunamasa bile bot'un aktif çalıştığından emin olabilirsiniz\\.\n\n" +
+          "📊 Bu sayede randevu bulunamasa bile bot\\'un aktif çalıştığından emin olabilirsiniz\\.\n\n" +
           "💡 Kapatmak için: /bildirim kapat",
           { parse_mode: "Markdown" }
         );
@@ -609,7 +609,7 @@ class TelegramService {
         await ctx.reply(
           "🔔 *Deneme Bildirimleri Açıldı*\n\n" +
           "✅ Artık her 5 dakikalık otomatik kontrol sonucu size bildirilecek\\.\n\n" +
-          "📊 Bu sayede randevu bulunamasa bile bot'un aktif çalıştığından emin olabilirsiniz\\.\n\n" +
+          "📊 Bu sayede randevu bulunamasa bile bot\\'un aktif çalıştığından emin olabilirsiniz\\.\n\n" +
           "💡 Kapatmak için: /bildirim\\_kapat",
           { parse_mode: "Markdown" }
         );
