@@ -25,8 +25,12 @@ export async function checkAppointments(): Promise<void> {
 
     if (appointments.length === 0) {
       console.log("⚠️ Randevu bulunamadı veya bir hata oluştu");
-      // Deneme bildirimi gönder (bildirimler açıksa)
-      await telegramService.sendCheckResult(0, 0);
+      // Kontrol sonucunu bildir (hata durumu)
+      try {
+        await telegramService.sendCheckResult(0, 0, 0);
+      } catch (telegramError) {
+        console.log("⚠️ Telegram bildirimi gönderilemedi (randevu bulunamadı):", telegramError);
+      }
       return;
     }
 
@@ -67,8 +71,12 @@ export async function checkAppointments(): Promise<void> {
       }
     }
 
-    // Kontrol sonucunu bildir (bildirimler açıksa)
-    await telegramService.sendCheckResult(appointments.length, validAppointmentsCount);
+    // Kontrol sonucunu her zaman bildir (kullanıcı tercihine göre)
+    try {
+      await telegramService.sendCheckResult(appointments.length, validAppointmentsCount, newAppointmentsCount);
+    } catch (telegramError) {
+      console.log("⚠️ Telegram kontrol sonucu bildirimi gönderilemedi:", telegramError);
+    }
     
     const endTime = new Date().toISOString();
     if (newAppointmentsCount > 0) {
@@ -81,6 +89,13 @@ export async function checkAppointments(): Promise<void> {
   } catch (error) {
     const errorTime = new Date().toISOString();
     console.error(`❌ RANDEVU KONTROLÜ HATASI - ${errorTime}:`, error);
+    
+    // Kontrol hatası bildir (kullanıcı tercihine göre)
+    try {
+      await telegramService.sendCheckResult(-1, 0, 0); // -1 hata durumunu belirtir
+    } catch (telegramError) {
+      console.log("⚠️ Telegram hata kontrol bildirimi gönderilemedi:", telegramError);
+    }
     
     // Kritik hataları Telegram'a bildir
     try {
@@ -206,19 +221,34 @@ async function processNewAppointment(
   appointment: VisaAppointment,
   appointmentKey: string
 ): Promise<void> {
-  cacheService.set(appointmentKey);
+  try {
+    cacheService.set(appointmentKey);
 
-  console.log(
-    `Yeni randevu bildirimi gönderiliyor: ID ${appointment.id} - ${appointment.center}`
-  );
-  const success = await telegramService.sendNotification(appointment);
-  if (success) {
-    console.log(`Bildirim başarıyla gönderildi: ID ${appointment.id}`);
-  } else {
-    // Hata durumunda önbellekten sil ve bir sonraki kontrolde tekrar dene
-    console.error(
-      `Bildirim gönderilemedi: ID ${appointment.id}. Önbellekten siliniyor.`
+    console.log(
+      `Yeni randevu bildirimi gönderiliyor: ID ${appointment.id} - ${appointment.center}`
     );
-    cacheService.delete(appointmentKey);
+    
+    const success = await telegramService.sendNotification(appointment);
+    if (success) {
+      console.log(`✅ Bildirim başarıyla gönderildi: ID ${appointment.id}`);
+    } else {
+      // Hata durumunda önbellekten sil ve bir sonraki kontrolde tekrar dene
+      console.error(
+        `❌ Bildirim gönderilemedi: ID ${appointment.id}. Önbellekten siliniyor.`
+      );
+      cacheService.delete(appointmentKey);
+    }
+  } catch (error) {
+    console.error(
+      `❌ Randevu işleme hatası (ID: ${appointment.id}):`, error
+    );
+    
+    // Hata durumunda önbellekten sil ki bir sonraki kontrolde tekrar denensin
+    try {
+      cacheService.delete(appointmentKey);
+      console.log(`🔄 Randevu (ID: ${appointment.id}) önbellekten silindi, tekrar denenecek`);
+    } catch (cacheError) {
+      console.error(`❌ Önbellek silme hatası (ID: ${appointment.id}):`, cacheError);
+    }
   }
 }

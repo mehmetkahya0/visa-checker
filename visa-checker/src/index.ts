@@ -14,30 +14,56 @@ let isRunning = false;
  */
 async function startApplication(): Promise<void> {
   try {
-    console.log('🚀 Uygulama başlatılıyor...');
+    console.log('🚀 Visa Checker Bot başlatılıyor...');
+    console.log('📊 Başlatma adımları:');
     
-    // Web server'ı başlat
+    // 1. Web server'ı başlat
+    console.log('1️⃣ Web server başlatılıyor...');
     startWebServer();
+    console.log('✅ Web server başlatıldı');
     
-    // Telegram botunu başlat
-    await telegramService.startBot();
-    
-    // Önbellek temizleme işlemini başlat
+    // 2. Önbellek sistemini başlat
+    console.log('2️⃣ Önbellek sistemi başlatılıyor...');
     cacheService.startCleanupInterval();
-
-    // Başlangıç bildirimini gönder
-    await telegramService.sendStartupNotification();
-
-    // CRON formatını doğrula
-    console.log(`🔍 CRON format kontrolü: ${config.app.checkInterval}`);
+    console.log('✅ Önbellek sistemi başlatıldı');
+    
+    // 3. CRON formatını doğrula
+    console.log('3️⃣ CRON format kontrolü...');
+    console.log(`🔍 CRON pattern: ${config.app.checkInterval}`);
     if (!cron.validate(config.app.checkInterval)) {
       console.error(`❌ Geçersiz CRON formatı: ${config.app.checkInterval}`);
       throw new Error(`Geçersiz CRON formatı: ${config.app.checkInterval}`);
     }
-    console.log(`✅ CRON format geçerli: ${config.app.checkInterval}`);
+    console.log(`✅ CRON format geçerli`);
 
-    // Zamanlanmış görevi başlat
-    console.log(`⏰ CRON job oluşturuluyor...`);
+    // 4. Telegram botunu başlat (timeout ile)
+    console.log('4️⃣ Telegram bot başlatılıyor...');
+    try {
+      // 30 saniye timeout ile Telegram bot başlat
+      await Promise.race([
+        telegramService.startBot(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Telegram bot timeout')), 30000)
+        )
+      ]);
+      console.log('✅ Telegram bot başlatıldı');
+      
+      // 5. Başlangıç bildirimini gönder
+      console.log('5️⃣ Başlangıç bildirimi gönderiliyor...');
+      const notificationSent = await telegramService.sendStartupNotification();
+      if (notificationSent) {
+        console.log('✅ Başlangıç bildirimi gönderildi');
+      } else {
+        console.log('⚠️ Başlangıç bildirimi gönderilemedi ama devam ediliyor');
+      }
+    } catch (telegramError) {
+      const errorMsg = telegramError instanceof Error ? telegramError.message : String(telegramError);
+      console.error('⚠️ Telegram bot başlatılamadı:', errorMsg);
+      console.log('📋 Telegram olmadan devam ediliyor - CRON job çalışacak...');
+    }
+
+    // 6. Zamanlanmış görevi başlat
+    console.log('6️⃣ CRON job oluşturuluyor...');
     cronJob = cron.schedule(config.app.checkInterval, async () => {
       if (isRunning) {
         console.log(`⚠️ Önceki kontrol hala çalışıyor, bu kontrol atlanıyor...`);
@@ -74,9 +100,21 @@ async function startApplication(): Promise<void> {
     cronJob.start();
     console.log(`✅ CRON Job başlatıldı ve çalışıyor`);
     
+    // 7. Sistem konfigürasyonunu göster
+    console.log('\n📊 SİSTEM KONFIGÜRASYONU:');
+    console.log(`🎯 Hedef ülke: ${config.app.targetCountry}`);
+    console.log(`🏛️ Mission ülkeler: ${config.app.missionCountries.join(', ')}`);
+    if (config.app.targetCities.length > 0) {
+      console.log(`🏙️ Hedef şehirler: ${config.app.targetCities.join(', ')}`);
+    }
+    if (config.app.targetSubCategories.length > 0) {
+      console.log(`📄 Hedef vize tipleri: ${config.app.targetSubCategories.join(', ')}`);
+    }
+    console.log(`🐛 Debug modu: ${config.app.debug}`);
+    
     // CRON job bilgilerini göster
     const now = new Date();
-    console.log(`📊 CRON Job Bilgileri:`);
+    console.log(`\n⏰ CRON JOB BİLGİLERİ:`);
     console.log(`   - Pattern: ${config.app.checkInterval}`);
     console.log(`   - Timezone: Europe/Istanbul`);
     console.log(`   - Şu anki zaman: ${now.toISOString()}`);
@@ -92,48 +130,47 @@ async function startApplication(): Promise<void> {
       nextRun.setMinutes(Math.ceil(now.getMinutes() / interval) * interval, 0, 0);
       console.log(`   - Bir sonraki çalışma (tahmini): ${nextRun.toISOString()}`);
     }
-    
-    console.log(`🎯 Hedef ülke: ${config.app.targetCountry}`);
-    console.log(`🏛️ Hedef ülkeler: ${config.app.missionCountries.join(', ')}`);
-    if (config.app.targetCities.length > 0) {
-      console.log(`🏙️ Hedef şehirler: ${config.app.targetCities.join(', ')}`);
-    }
-    if (config.app.targetSubCategories.length > 0) {
-      console.log(`📄 Hedef vize tipleri: ${config.app.targetSubCategories.join(', ')}`);
-    }
-    console.log(`🐛 Debug modu: ${config.app.debug}`);
 
-    // İlk kontrolü yap
-    console.log(`🚀 İlk manuel kontrol başlatılıyor...`);
+    // 8. İlk manuel kontrolü yap
+    console.log('\n8️⃣ İlk manuel kontrol başlatılıyor...');
     try {
       await checkAppointments();
-      console.log(`✅ İlk kontrol tamamlandı`);
+      console.log('✅ İlk kontrol tamamlandı');
     } catch (error) {
-      console.error(`❌ İlk kontrol hatası:`, error);
+      console.error('❌ İlk kontrol hatası:', error);
+      // İlk kontrol başarısız olsa da sistem çalışmaya devam etsin
     }
 
-    // CRON job test ve monitoring
+    // 9. Sistem monitoring başlat
+    console.log('\n9️⃣ Sistem monitoring başlatılıyor...');
     let testCount = 0;
-    const maxTests = 5; // 5 test sonra durdur
+    const maxTests = 3; // İlk 3 test sonra durdur
     
     const testInterval = setInterval(() => {
       testCount++;
       const now = new Date();
-      console.log(`\n⏰ Test ${testCount} - CRON Job Durumu (${now.toISOString()}):`);
+      console.log(`\n⏰ Monitoring ${testCount}/${maxTests} - (${now.toISOString()}):`);
       console.log(`   - CRON Pattern: ${config.app.checkInterval}`);
-      console.log(`   - Son işlem durumu: ${isRunning ? 'Çalışıyor' : 'Beklemede'}`);
+      console.log(`   - İşlem durumu: ${isRunning ? 'Çalışıyor' : 'Beklemede'}`);
+      console.log(`   - Uptime: ${Math.floor(process.uptime())} saniye`);
+      console.log(`   - Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
       
       if (testCount >= maxTests) {
         clearInterval(testInterval);
-        console.log(`🔄 Test monitoring tamamlandı. CRON job çalışmaya devam ediyor...`);
+        console.log(`\n✅ İlk monitoring tamamlandı. Sistem çalışmaya devam ediyor...`);
+        console.log(`🔥 Visa Checker Bot tamamen hazır!`);
+        console.log(`📱 /debug komutu ile manuel test yapabilirsiniz`);
       }
     }, 30000); // Her 30 saniyede test
 
-    // Graceful shutdown handler
+    // 10. Graceful shutdown handler
     setupGracefulShutdown(cronJob);
     
+    console.log('\n🎉 TÜM BAŞLATMA ADIMLAR TAMAMLANDI!');
+    console.log('✅ Bot şimdi otomatik olarak randevuları kontrol ediyor...\n');
+    
   } catch (error) {
-    console.error('Uygulama başlatılamadı:', error);
+    console.error('\n❌ Uygulama başlatılamadı:', error);
     try {
       await telegramService.sendErrorNotification('Uygulama başlatılamadı', String(error));
     } catch (notificationError) {

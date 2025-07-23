@@ -23,7 +23,7 @@ class TelegramService {
   private lastReset = Date.now();
   private resetInterval?: ReturnType<typeof setInterval>;
   private searchCooldowns = new Map<number, number>(); // userId -> lastSearchTime
-  private checkNotificationsEnabled = false; // Deneme bildirimleri durumu
+  private checkNotificationsEnabled = true; // Deneme bildirimleri durumu - varsayılan açık
   private lastCheckCount = 0; // Son kontrol edilen randevu sayısı
 
   constructor() {
@@ -211,7 +211,7 @@ class TelegramService {
         "📋 *Hızlı Komutlar:*",
         "/status - Bot durumu ve yapılandırması",
         "/arama - Manuel randevu ara",
-        "/bildirim - Deneme bildirimleri aç/kapat",
+        "/bildirim - Otomatik bildirimler aç/kapat",
         "/stats - İstatistikler ve önbellek bilgileri",
         "/config - Detaylı yapılandırma bilgileri",
         "/ping - Bot bağlantı testi",
@@ -238,7 +238,7 @@ class TelegramService {
         config.app.targetCities.length > 0 ? `🏙️ Hedef Şehirler: ${config.app.targetCities.join(', ')}` : "",
         config.app.targetSubCategories.length > 0 ? `📄 Vize Tipleri: ${config.app.targetSubCategories.join(', ')}` : "",
         `📨 Bu Dakika Gönderilen Mesaj: ${this.messageCount}/${config.telegram.rateLimit}`,
-        `� Deneme Bildirimleri: ${this.checkNotificationsEnabled ? 'Açık ✅' : 'Kapalı ❌'}`,
+        `🔔 Otomatik Bildirimler: ${this.checkNotificationsEnabled ? 'Açık ✅' : 'Kapalı ❌'}`,
         `�🐛 Debug Modu: ${config.app.debug ? 'Açık' : 'Kapalı'}`
       ].filter(line => line !== "").join("\n");
 
@@ -554,17 +554,18 @@ class TelegramService {
       if (!action || (action !== 'aç' && action !== 'kapat' && action !== 'ac' && action !== 'on' && action !== 'off')) {
         const currentStatus = this.checkNotificationsEnabled ? 'Açık ✅' : 'Kapalı ❌';
         const statusMessage = [
-          "🔔 *Deneme Bildirimleri Ayarları*",
+          "🔔 *Otomatik Bildirim Ayarları*",
           "",
           `📊 Mevcut Durum: ${currentStatus}`,
           "",
           "📋 *Kullanım:*",
-          "/bildirim_ac - Bildirimleri aç",
-          "/bildirim_kapat - Bildirimleri kapat",
+          "/bildirim_ac - Tüm kontrol sonuçlarını bildir",
+          "/bildirim_kapat - Sadece randevu bulunca bildir",
           "",
-          "💡 Bu özellik açıldığında bot her 5 dakikalık kontrol sonucunu bildirir \\(randevu bulunmasa bile\\)\\.",
+          "💡 *Açık Durum:* Her 5 dakika kontrol sonucu bildirilir \\(başarılı/başarısız\\)",
+          "💡 *Kapalı Durum:* Sadece yeni randevu bulunduğunda bildirim alırsınız",
           "",
-          `🔢 Son Kontrol: ${this.lastCheckCount} randevu kontrol edildi`,
+          `🔢 Son Kontrol: ${this.lastCheckCount >= 0 ? `${this.lastCheckCount} randevu kontrol edildi` : 'Henüz kontrol yapılmadı'}`,
           `⏰ Son Reset: ${new Date(this.lastReset).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}`
         ].join("\n");
 
@@ -579,23 +580,23 @@ class TelegramService {
 
       if (shouldEnable && !wasEnabled) {
         await ctx.reply(
-          "🔔 *Deneme Bildirimleri Açıldı*\n\n" +
-          "✅ Artık her 5 dakikalık otomatik kontrol sonucu size bildirilecek\\.\n\n" +
-          "📊 Bu sayede randevu bulunamasa bile bot\\'un aktif çalıştığından emin olabilirsiniz\\.\n\n" +
-          "💡 Kapatmak için: /bildirim kapat",
+          "🔔 *Otomatik Bildirimler Açıldı*\n\n" +
+          "✅ Artık her 5 dakikalık otomatik kontrol sonucu bildirilecek\\.\n\n" +
+          "📊 Hem başarılı hem başarısız kontroller bildirilir\\.\n\n" +
+          "💡 Sadece randevu bulunca bildirim almak için: /bildirim\\_kapat",
           { parse_mode: "Markdown" }
         );
       } else if (!shouldEnable && wasEnabled) {
         await ctx.reply(
-          "🔕 *Deneme Bildirimleri Kapatıldı*\n\n" +
-          "❌ Artık sadece açık randevu bulunduğunda bildirim alacaksınız\\.\n\n" +
-          "💡 Tekrar açmak için: /bildirim\\_ac",
+          "🔕 *Otomatik Bildirimler Kapatıldı*\n\n" +
+          "❌ Artık sadece yeni randevu bulunduğunda bildirim alacaksınız\\.\n\n" +
+          "💡 Tüm kontrol sonuçlarını almak için: /bildirim\\_ac",
           { parse_mode: "Markdown" }
         );
       } else {
         const currentStatusText = shouldEnable ? 'zaten açık' : 'zaten kapalı';
         await ctx.reply(
-          `ℹ️ Deneme bildirimleri ${currentStatusText}.\n\n💡 Durumu görmek için: /bildirim`
+          `ℹ️ Otomatik bildirimler ${currentStatusText}.\n\n💡 Durumu görmek için: /bildirim`
         );
       }
     });
@@ -607,15 +608,15 @@ class TelegramService {
 
       if (!wasEnabled) {
         await ctx.reply(
-          "🔔 *Deneme Bildirimleri Açıldı*\n\n" +
-          "✅ Artık her 5 dakikalık otomatik kontrol sonucu size bildirilecek\\.\n\n" +
-          "📊 Bu sayede randevu bulunamasa bile bot\\'un aktif çalıştığından emin olabilirsiniz\\.\n\n" +
-          "💡 Kapatmak için: /bildirim\\_kapat",
+          "🔔 *Otomatik Bildirimler Açıldı*\n\n" +
+          "✅ Artık her 5 dakikalık otomatik kontrol sonucu bildirilecek\\.\n\n" +
+          "📊 Hem başarılı hem başarısız kontroller bildirilir\\.\n\n" +
+          "💡 Sadece randevu bulunca bildirim almak için: /bildirim\\_kapat",
           { parse_mode: "Markdown" }
         );
       } else {
         await ctx.reply(
-          "ℹ️ Deneme bildirimleri zaten açık.\n\n💡 Durumu görmek için: /bildirim"
+          "ℹ️ Otomatik bildirimler zaten açık.\n\n💡 Durumu görmek için: /bildirim"
         );
       }
     });
@@ -627,14 +628,14 @@ class TelegramService {
 
       if (wasEnabled) {
         await ctx.reply(
-          "🔕 *Deneme Bildirimleri Kapatıldı*\n\n" +
-          "❌ Artık sadece açık randevu bulunduğunda bildirim alacaksınız\\.\n\n" +
-          "💡 Tekrar açmak için: /bildirim\\_ac",
+          "🔕 *Otomatik Bildirimler Kapatıldı*\n\n" +
+          "❌ Artık sadece yeni randevu bulunduğunda bildirim alacaksınız\\.\n\n" +
+          "💡 Tüm kontrol sonuçlarını almak için: /bildirim\\_ac",
           { parse_mode: "Markdown" }
         );
       } else {
         await ctx.reply(
-          "ℹ️ Deneme bildirimleri zaten kapalı.\n\n💡 Durumu görmek için: /bildirim"
+          "ℹ️ Otomatik bildirimler zaten kapalı.\n\n💡 Durumu görmek için: /bildirim"
         );
       }
     });
@@ -714,8 +715,10 @@ class TelegramService {
    */
   async sendStartupNotification(): Promise<boolean> {
     try {
+      console.log("📤 Başlatma bildirimi gönderiliyor...");
+      
       const startupMessage = [
-        "🚀 *Bot Başlatıldı!*",
+        "🚀 *Visa Checker Bot Başlatıldı!*",
         "",
         `📅 Başlangıç Zamanı: ${new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}`,
         `🔄 Kontrol Sıklığı: ${this.formatAsCode(config.app.checkInterval)}`,
@@ -725,12 +728,13 @@ class TelegramService {
         config.app.targetSubCategories.length > 0 ? `📄 Vize Tipleri: ${config.app.targetSubCategories.join(', ')}` : "",
         "",
         "✅ Bot aktif olarak randevuları takip etmeye başladı.",
+        `🐛 Debug Modu: ${config.app.debug ? 'Açık' : 'Kapalı'}`,
         "",
-        "📱 *Bot Komutları:*",
-        "/status - Bot durumu",
+        "📱 *Test Komutları:*",
+        "/debug - Manuel kontrol testi",
+        "/status - Bot durumu", 
         "/bildirim - Deneme bildirimleri",
-        "/ping - Bağlantı testi",
-        "/help - Tüm komutlar"
+        "/ping - Bağlantı testi"
       ].filter(line => line !== "").join("\n");
 
       await this.bot.telegram.sendMessage(
@@ -738,11 +742,11 @@ class TelegramService {
         startupMessage,
         { parse_mode: "Markdown" }
       );
-
-      console.log("Başlangıç bildirimi gönderildi");
+      
+      console.log("✅ Başlatma bildirimi başarıyla gönderildi");
       return true;
     } catch (error) {
-      console.error("Başlangıç bildirimi gönderilemedi:", error);
+      console.error("❌ Başlangıç bildirimi gönderilemedi:", error);
       return false;
     }
   }
@@ -808,33 +812,96 @@ class TelegramService {
    * Bot'u başlatır (webhook veya polling)
    */
   async startBot(): Promise<void> {
-    const maxRetries = 3;
+    const maxRetries = 5;
     let retryCount = 0;
     
     while (retryCount < maxRetries) {
       try {
-        // Önceki webhook'ları temizle
-        await this.bot.telegram.deleteWebhook({ drop_pending_updates: true });
-        console.log("Önceki webhook'lar temizlendi");
+        console.log(`🤖 Telegram bot başlatılıyor (deneme ${retryCount + 1}/${maxRetries})...`);
         
-        // Bot'u başlat
-        await this.bot.launch();
-        console.log("Telegram botu başlatıldı");
+        // Mevcut bot'u tamamen durdur
+        try {
+          await this.bot.stop('SIGTERM');
+          console.log('🛑 Önceki bot instance durduruldu');
+        } catch (stopError) {
+          // Durdurma hatası önemli değil
+        }
+        
+        // Daha uzun bekleme
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Webhook'ları temizle
+        await this.bot.telegram.deleteWebhook({ drop_pending_updates: true });
+        console.log("✅ Önceki webhook'lar temizlendi");
+        
+        // Polling yerine manual launch dene
+        await this.bot.launch({
+          allowedUpdates: ['message', 'callback_query']
+        });
+        console.log("✅ Telegram botu başarıyla başlatıldı");
+        
+        // Test bağlantısı
+        await this.testConnection();
+        
         return; // Başarılı olursa çık
         
       } catch (error: any) {
         retryCount++;
-        console.error(`Telegram botu başlatılamadı (deneme ${retryCount}/${maxRetries}):`, error?.message || error);
+        const errorMsg = error?.message || String(error);
+        console.error(`❌ Telegram botu başlatılamadı (deneme ${retryCount}/${maxRetries}): ${errorMsg}`);
         
         if (error?.response?.error_code === 409) {
-          console.log("Conflict hatası - 5 saniye bekleyip tekrar denenecek...");
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          console.log("⚠️ Conflict hatası - Telegram'da webhook temizliği yapılıyor...");
+          
+          // Telegram webhook'ları farklı yöntemle temizle
+          try {
+            const webhookInfo = await this.bot.telegram.getWebhookInfo();
+            console.log('Webhook info:', webhookInfo);
+            
+            await this.bot.telegram.setWebhook(''); // Boş webhook set et
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await this.bot.telegram.deleteWebhook({ drop_pending_updates: true });
+            console.log('✅ Webhook aggressive temizlik yapıldı');
+          } catch (webhookError) {
+            console.log('Webhook temizlik hatası:', webhookError);
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 15000)); // 15 saniye bekle
+        } else if (error?.response?.error_code === 401) {
+          console.error("❌ Telegram bot token geçersiz! Lütfen token'ı kontrol edin.");
+          throw new Error("Geçersiz Telegram bot token");
         } else if (retryCount >= maxRetries) {
-          throw error;
+          console.error("❌ Maksimum deneme sayısına ulaşıldı");
+          // Bot başlatılamasa da sistemin çalışmaya devam etmesine izin ver
+          console.log("⚠️ Telegram bot olmadan devam ediliyor...");
+          return;
         } else {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 5000));
         }
       }
+    }
+  }
+
+  /**
+   * Telegram bağlantısını test eder
+   */
+  private async testConnection(): Promise<void> {
+    try {
+      const botInfo = await this.bot.telegram.getMe();
+      console.log(`🤖 Bot bilgisi: @${botInfo.username} (${botInfo.first_name})`);
+      
+      // Test mesajı gönder (sadece debug modundaysa)
+      if (config.app.debug) {
+        await this.bot.telegram.sendMessage(
+          config.telegram.channelId,
+          "🧪 *Bot Bağlantı Testi*\n\n✅ Bot başarıyla başlatıldı ve bağlantı test edildi.",
+          { parse_mode: "Markdown" }
+        );
+        console.log("✅ Test mesajı gönderildi");
+      }
+    } catch (error) {
+      console.error("⚠️ Bot bağlantı testi başarısız:", error);
+      // Test başarısız olsa da devam et, belki kanal ID'si yanlış
     }
   }
 
@@ -895,36 +962,78 @@ class TelegramService {
   }
 
   /**
-   * Her 5 dakikalık kontrol sonucunu bildirir (eğer özellik açıksa)
+   * Her 5 dakikalık kontrol sonucunu bildirir
+   * @param totalFound Toplam bulunan randevu sayısı (-1 = hata durumu)
+   * @param filteredFound Kriterlere uygun randevu sayısı  
+   * @param newFound Yeni bulunan (bildirilen) randevu sayısı
    */
-  async sendCheckResult(totalFound: number, filteredFound: number): Promise<boolean> {
-    if (!this.checkNotificationsEnabled) {
-      return false;
-    }
-
+  async sendCheckResult(totalFound: number, filteredFound: number, newFound: number = 0): Promise<boolean> {
     try {
       this.lastCheckCount = totalFound;
       
-      const checkMessage = [
-        "🔍 *Otomatik Kontrol Sonucu*",
-        "",
-        `📅 Kontrol Zamanı: ${new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}`,
-        `🔢 Toplam Randevu: ${totalFound}`,
-        `✅ Kriterlere Uygun: ${filteredFound}`,
-        filteredFound > 0 ? `🎉 Açık randevu bulundu! Detaylar yukarıda gönderildi.` : `❌ Açık randevu bulunamadı`,
-        "",
-        `💡 Bu bildirimler /bildirim komutu ile kapatılabilir`
-      ].join("\n");
+      // Eğer bildirimler kapatıldıysa, sadece yeni randevu bulunduğunda bildir
+      if (!this.checkNotificationsEnabled && newFound === 0 && totalFound >= 0) {
+        return false;
+      }
+      
+      let checkMessage: string[] = [];
+      
+      if (totalFound === -1) {
+        // Hata durumu - her durumda bildir
+        checkMessage = [
+          "❌ Kontrol Hatası!",
+          "",
+          `📅 Hata Zamanı: ${new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}`,
+          `⚠️ Randevu kontrolü sırasında hata oluştu`,
+          "",
+          "🔄 Bot otomatik olarak bir sonraki kontrole devam edecek...",
+          "",
+          `💡 Detaylı hata bilgileri sistem loglarında bulunabilir`
+        ];
+      } else if (newFound > 0) {
+        // Yeni randevu bulundu - her durumda bildir
+        checkMessage = [
+          "🎉 Randevu Bulundu!",
+          "",
+          `📅 Kontrol Zamanı: ${new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}`,
+          `🔢 Toplam Randevu: ${totalFound}`,
+          `✅ Kriterlere Uygun: ${filteredFound}`,
+          `🆕 Yeni Bulunan: ${newFound}`,
+          "",
+          "🎯 Randevu detayları yukarıda gönderildi!",
+          "",
+          `💡 Bildirimleri yönetmek için /bildirim komutunu kullanın`
+        ];
+      } else if (this.checkNotificationsEnabled) {
+        // Bildirimler açık ve randevu bulunamadı - bildir
+        checkMessage = [
+          "🔍 Otomatik Kontrol Sonucu",
+          "",
+          `📅 Kontrol Zamanı: ${new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}`,
+          `🔢 Toplam Randevu: ${totalFound}`,
+          `✅ Kriterlere Uygun: ${filteredFound}`,
+          `❌ Yeni açık randevu bulunamadı`,
+          "",
+          "🔄 Bot aktif olarak çalışmaya devam ediyor...",
+          "",
+          `💡 Bu bildirimleri kapatmak için /bildirim_kapat komutunu kullanın`
+        ];
+      } else {
+        // Bildirimler kapalı ve randevu yok - bildirme
+        return false;
+      }
 
       await this.bot.telegram.sendMessage(
         config.telegram.channelId,
-        checkMessage,
-        { parse_mode: "Markdown" }
+        checkMessage.join("\n")
+        // Markdown parsing sorunları nedeniyle parse_mode kaldırıldı
       );
 
+      const statusText = totalFound === -1 ? 'Hata' : (newFound > 0 ? 'Randevu bulundu' : 'Randevu bulunamadı');
+      console.log(`📤 Kontrol sonucu bildirimi gönderildi: ${statusText}`);
       return true;
     } catch (error) {
-      console.error("Kontrol sonucu bildirimi gönderilirken hata:", error);
+      console.error("❌ Kontrol sonucu bildirimi gönderilirken hata:", error);
       return false;
     }
   }
