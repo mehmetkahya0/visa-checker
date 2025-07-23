@@ -21,7 +21,7 @@ safe_join() {
 # Create the .env file with proper formatting
 cat > /app/.env << 'EOF'
 TELEGRAM_BOT_TOKEN=%TELEGRAM_BOT_TOKEN%
-TELEGRAM_CHANNEL_ID=%TELEGRAM_CHANNEL_ID%
+TELEGRAM_CHAT_ID=%TELEGRAM_CHAT_ID%
 CHECK_INTERVAL=%CHECK_INTERVAL%
 TARGET_COUNTRY=%TARGET_COUNTRY%
 MISSION_COUNTRY=%MISSION_COUNTRY%
@@ -37,7 +37,7 @@ EOF
 
 # Replace placeholders with actual values
 sed -i "s|%TELEGRAM_BOT_TOKEN%|$(bashio::config 'telegram_bot_token')|g" /app/.env
-sed -i "s|%TELEGRAM_CHANNEL_ID%|$(bashio::config 'telegram_channel_id')|g" /app/.env
+sed -i "s|%TELEGRAM_CHAT_ID%|$(bashio::config 'telegram_channel_id')|g" /app/.env
 sed -i "s|%CHECK_INTERVAL%|$(bashio::config 'check_interval')|g" /app/.env
 sed -i "s|%TARGET_COUNTRY%|$(bashio::config 'target_country')|g" /app/.env
 sed -i "s|%MISSION_COUNTRY%|$(safe_join 'mission_countries')|g" /app/.env
@@ -131,8 +131,8 @@ if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
     exit 1
 fi
 
-if [ -z "$TELEGRAM_CHANNEL_ID" ]; then
-    bashio::log.fatal "❌ TELEGRAM_CHANNEL_ID not set"
+if [ -z "$TELEGRAM_CHAT_ID" ]; then
+    bashio::log.fatal "❌ TELEGRAM_CHAT_ID not set"
     exit 1
 fi
 
