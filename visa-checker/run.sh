@@ -11,35 +11,75 @@ bashio::log.info "📝 Creating configuration from add-on options..."
 # Function to safely join array values
 safe_join() {
     local config_key="$1"
-    bashio::log.info "🔍 Debug: Checking config key '$config_key'"
+    bashio::log.info "🔍 Debug: Processing config key '$config_key'"
     
+    # Check if bashio::config.has_value works for arrays
     if bashio::config.has_value "$config_key"; then
-        local raw_value=$(bashio::config "$config_key" 2>/dev/null)
-        bashio::log.info "🔍 Debug: Raw value for '$config_key': '$raw_value'"
+        bashio::log.info "🔍 Debug: bashio::config.has_value returned true for '$config_key'"
         
-        # Try to parse as array and join with comma using jq
-        local result=$(echo "$raw_value" | jq -r 'if type == "array" and length > 0 then join(",") elif type == "string" and length > 0 then . else empty end' 2>/dev/null)
-        bashio::log.info "🔍 Debug: jq result for '$config_key': '$result'"
-        
-        # If jq fails or returns empty, try direct string approach
-        if [ -z "$result" ]; then
-            bashio::log.info "🔍 Debug: jq failed, trying manual parsing for '$config_key'"
-            # Handle different possible formats
-            if [[ "$raw_value" == \[*\] ]]; then
-                # Array format like ["grc","deu","ita"]
-                result=$(echo "$raw_value" | tr -d '[]"' | tr ' ' ',' | sed 's/,,*/,/g' | sed 's/^,\|,$//g')
-            else
-                # Direct string
-                result="$raw_value"
-            fi
-            bashio::log.info "🔍 Debug: Manual parsing result for '$config_key': '$result'"
+        # Get the count of items in the array
+        local count=0
+        if bashio::config.exists "$config_key"; then
+            # Try to get array length using bashio
+            count=$(bashio::config "$config_key | length" 2>/dev/null || echo "0")
+            bashio::log.info "🔍 Debug: Array length for '$config_key': $count"
         fi
         
-        echo "$result"
-    else
-        bashio::log.info "🔍 Debug: Config key '$config_key' has no value"
-        echo ""
+        if [ "$count" -gt 0 ] 2>/dev/null; then
+            # It's an array with items, iterate through them
+            local result=""
+            for (( i=0; i<count; i++ )); do
+                local item=$(bashio::config "${config_key}[$i]" 2>/dev/null || echo "")
+                if [ -n "$item" ]; then
+                    if [ -n "$result" ]; then
+                        result="$result,$item"
+                    else
+                        result="$item"
+                    fi
+                fi
+            done
+            bashio::log.info "🔍 Debug: Array iteration result for '$config_key': '$result'"
+            echo "$result"
+            return
+        fi
     fi
+    
+    # Fallback to direct config reading
+    bashio::log.info "🔍 Debug: Fallback to direct config reading for '$config_key'"
+    local raw_value=$(bashio::config "$config_key" 2>/dev/null || echo "")
+    bashio::log.info "🔍 Debug: Raw fallback value for '$config_key': '$raw_value'"
+    
+    # If raw value is empty or null, return empty
+    if [ -z "$raw_value" ] || [ "$raw_value" = "null" ]; then
+        bashio::log.info "🔍 Debug: '$config_key' is empty or null"
+        echo ""
+        return
+    fi
+    
+    # Try to parse as array using jq
+    local result=""
+    if echo "$raw_value" | jq -e 'type == "array"' >/dev/null 2>&1; then
+        # It's an array, join with commas
+        result=$(echo "$raw_value" | jq -r 'join(",")')
+        bashio::log.info "🔍 Debug: jq array join result for '$config_key': '$result'"
+    elif echo "$raw_value" | jq -e 'type == "string"' >/dev/null 2>&1; then
+        # It's a string, use as-is
+        result=$(echo "$raw_value" | jq -r '.')
+        bashio::log.info "🔍 Debug: jq string result for '$config_key': '$result'"
+    else
+        # Fallback: manual parsing
+        bashio::log.info "🔍 Debug: Manual parsing for '$config_key'"
+        if [[ "$raw_value" == \[*\] ]]; then
+            # Array format like ["grc","deu","ita"]
+            result=$(echo "$raw_value" | sed 's/\[//g' | sed 's/\]//g' | sed 's/"//g' | sed 's/'\''//g' | tr ' ' ',' | sed 's/,,*/,/g' | sed 's/^,\|,$//g')
+        else
+            # Direct string
+            result="$raw_value"
+        fi
+        bashio::log.info "🔍 Debug: Manual parsing result for '$config_key': '$result'"
+    fi
+    
+    echo "$result"
 }
 
 # Create the .env file with proper formatting
@@ -66,11 +106,35 @@ sed -i "s|%CHECK_INTERVAL%|$(bashio::config 'check_interval')|g" /app/.env
 sed -i "s|%TARGET_COUNTRY%|$(bashio::config 'target_country')|g" /app/.env
 
 # Debug mission countries before replacement
-bashio::log.info "🔍 Debug: About to parse mission_countries..."
-MISSION_COUNTRIES_VALUE="$(safe_join 'mission_countries')"
-bashio::log.info "🔍 Debug: MISSION_COUNTRIES_VALUE before sed: '$MISSION_COUNTRIES_VALUE'"
+bashio::log.info "🔍 Debug: === MISSION COUNTRIES DEBUGGING ==="
+bashio::log.info "🔍 Debug: Method 1 - bashio::config.exists:"
+bashio::config.exists 'mission_countries' && bashio::log.info "  EXISTS: YES" || bashio::log.info "  EXISTS: NO"
 
-# Check if the value is empty and try alternative approach
+bashio::log.info "🔍 Debug: Method 2 - bashio::config.has_value:"
+bashio::config.has_value 'mission_countries' && bashio::log.info "  HAS_VALUE: YES" || bashio::log.info "  HAS_VALUE: NO"
+
+bashio::log.info "🔍 Debug: Method 3 - Direct bashio::config:"
+DIRECT_CONFIG=$(bashio::config 'mission_countries' 2>/dev/null || echo "ERROR")
+bashio::log.info "  DIRECT_CONFIG: '$DIRECT_CONFIG'"
+
+bashio::log.info "🔍 Debug: Method 4 - Array length check:"
+ARRAY_LENGTH=$(bashio::config 'mission_countries | length' 2>/dev/null || echo "ERROR")
+bashio::log.info "  ARRAY_LENGTH: '$ARRAY_LENGTH'"
+
+if [ "$ARRAY_LENGTH" != "ERROR" ] && [ "$ARRAY_LENGTH" -gt 0 ] 2>/dev/null; then
+    bashio::log.info "🔍 Debug: Method 5 - Array iteration:"
+    for (( i=0; i<ARRAY_LENGTH; i++ )); do
+        ARRAY_ITEM=$(bashio::config "mission_countries[$i]" 2>/dev/null || echo "ERROR")
+        bashio::log.info "  mission_countries[$i]: '$ARRAY_ITEM'"
+    done
+fi
+
+bashio::log.info "🔍 Debug: === END DEBUGGING ==="
+
+MISSION_COUNTRIES_VALUE="$(safe_join 'mission_countries')"
+bashio::log.info "🔍 Debug: MISSION_COUNTRIES_VALUE after safe_join: '$MISSION_COUNTRIES_VALUE'"
+
+# Check if the value is empty and try alternative approaches
 if [ -z "$MISSION_COUNTRIES_VALUE" ]; then
     bashio::log.info "🔍 Debug: MISSION_COUNTRIES_VALUE is empty, trying direct bashio::config approach..."
     MISSION_COUNTRIES_RAW=$(bashio::config 'mission_countries' 2>/dev/null || echo "ERROR_READING_CONFIG")
@@ -78,8 +142,16 @@ if [ -z "$MISSION_COUNTRIES_VALUE" ]; then
     
     # Try to handle it manually if it's an array
     if [[ "$MISSION_COUNTRIES_RAW" == \[*\] ]]; then
-        MISSION_COUNTRIES_VALUE=$(echo "$MISSION_COUNTRIES_RAW" | sed 's/\[//g' | sed 's/\]//g' | sed 's/"//g' | sed 's/ //g')
+        MISSION_COUNTRIES_VALUE=$(echo "$MISSION_COUNTRIES_RAW" | sed 's/\[//g' | sed 's/\]//g' | sed 's/"//g' | sed 's/'\''//g' | sed 's/ //g')
         bashio::log.info "🔍 Debug: Manual parsing result: '$MISSION_COUNTRIES_VALUE'"
+    elif [ "$MISSION_COUNTRIES_RAW" != "ERROR_READING_CONFIG" ] && [ "$MISSION_COUNTRIES_RAW" != "null" ] && [ -n "$MISSION_COUNTRIES_RAW" ]; then
+        MISSION_COUNTRIES_VALUE="$MISSION_COUNTRIES_RAW"
+        bashio::log.info "🔍 Debug: Using raw value: '$MISSION_COUNTRIES_VALUE'"
+    else
+        # Ultimate fallback - use default values from config.yaml
+        bashio::log.info "🔍 Debug: All methods failed, using default values from config.yaml"
+        MISSION_COUNTRIES_VALUE="grc,deu,ita"
+        bashio::log.info "🔍 Debug: Using fallback default: '$MISSION_COUNTRIES_VALUE'"
     fi
 fi
 
@@ -161,6 +233,17 @@ done
 
 # Also show MISSION_COUNTRY line specifically
 bashio::log.info "🔍 MISSION_COUNTRY line from .env: $(grep '^MISSION_COUNTRY=' /app/.env || echo 'NOT_FOUND')"
+
+# Verify the final mission countries value
+FINAL_MISSION_VALUE=$(grep '^MISSION_COUNTRY=' /app/.env | cut -d'=' -f2)
+bashio::log.info "🔍 Final MISSION_COUNTRY value in .env: '$FINAL_MISSION_VALUE'"
+
+# If still empty, force a default value
+if [ -z "$FINAL_MISSION_VALUE" ] || [ "$FINAL_MISSION_VALUE" = "" ]; then
+    bashio::log.info "🔍 MISSION_COUNTRY is still empty, forcing default value..."
+    sed -i 's/^MISSION_COUNTRY=.*/MISSION_COUNTRY=grc,deu,ita/' /app/.env
+    bashio::log.info "🔍 Updated MISSION_COUNTRY line: $(grep '^MISSION_COUNTRY=' /app/.env)"
+fi
 
 # Use a more reliable method to export variables
 while IFS='=' read -r key value; do

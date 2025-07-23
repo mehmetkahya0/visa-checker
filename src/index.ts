@@ -25,15 +25,17 @@ async function startApplication(): Promise<void> {
     // Zamanlanmış görevi başlat
     cron.schedule(config.app.checkInterval, checkAppointments);
     
+    console.log(`🔍 Configuration loaded successfully:`);
     console.log(`Vize randevu kontrolü başlatıldı. Kontrol sıklığı: ${config.app.checkInterval}`);
-    console.log(`Hedef ülke: ${config.app.targetCountry}`);
-    console.log(`Hedef ülkeler: ${config.app.missionCountries.join(', ')}`);
+    console.log(`🎯 Target Country: ${config.app.targetCountry}`);
+    console.log(`🏛️ Mission Countries: ${config.app.missionCountries.join(', ')}`);
     if (config.app.targetCities.length > 0) {
-      console.log(`Hedef şehirler: ${config.app.targetCities.join(', ')}`);
+      console.log(`🏙️ Target Cities: ${config.app.targetCities.join(', ')}`);
     }
     if (config.app.targetSubCategories.length > 0) {
-      console.log(`Hedef vize tipleri: ${config.app.targetSubCategories.join(', ')}`);
+      console.log(`📄 Target Visa Types: ${config.app.targetSubCategories.join(', ')}`);
     }
+    console.log(`🐛 Debug Mode: ${config.app.debug}`);
 
     // İlk kontrolü yap
     void checkAppointments();

@@ -73,10 +73,14 @@ function validateEnvironment(): EnvironmentConfig {
 
   // Hedef ülkeleri virgülle ayrılmış listeden diziye çevir
   const missionCountries = process.env.MISSION_COUNTRY
-    ? process.env.MISSION_COUNTRY.split(",").map((country) =>
-        country.trim().toLowerCase()
-      )
+    ? process.env.MISSION_COUNTRY.split(",")
+        .map((country) => country.trim().toLowerCase())
+        .filter((country) => country.length > 0)
     : ["nld"];
+
+  // Debug logging for mission countries
+  console.log(`🔍 Environment Debug - MISSION_COUNTRY env var: "${process.env.MISSION_COUNTRY}"`);
+  console.log(`🔍 Environment Debug - Parsed mission countries: [${missionCountries.join(', ')}]`);
 
   // Parse subcategories from env
   const subCategories = process.env.VISA_SUBCATEGORIES
@@ -94,7 +98,8 @@ function validateEnvironment(): EnvironmentConfig {
     app: {
       checkInterval: process.env.CHECK_INTERVAL || "*/5 * * * *",
       // The target country should be a lower-case country code (e.g., "tur", "gbr"). Defaults to "tur".
-      targetCountry: process.env.TARGET_COUNTRY?.toLowerCase() || "tur",
+      // Convert "tr" to "tur" for Turkey
+      targetCountry: (process.env.TARGET_COUNTRY?.toLowerCase() === "tr" ? "tur" : process.env.TARGET_COUNTRY?.toLowerCase()) || "tur",
       targetCities: cities,
       missionCountries,
       targetSubCategories: subCategories,

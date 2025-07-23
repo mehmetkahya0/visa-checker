@@ -73,10 +73,14 @@ function validateEnvironment(): EnvironmentConfig {
 
   // Hedef ülkeleri virgülle ayrılmış listeden diziye çevir
   const missionCountries = process.env.MISSION_COUNTRY
-    ? process.env.MISSION_COUNTRY.split(",").map((country) =>
-        country.trim().toLowerCase()
-      )
-    : ["nld"];
+    ? process.env.MISSION_COUNTRY.split(",")
+        .map((country) => country.trim().toLowerCase())
+        .filter((country) => country.length > 0) // Boş elemanları filtrele
+    : ["nld"]; // Varsayılan değer
+
+  // Debug: Mission countries'i logla
+  console.log(`🔍 Debug Environment: MISSION_COUNTRY env var: "${process.env.MISSION_COUNTRY}"`);
+  console.log(`🔍 Debug Environment: Parsed mission countries:`, missionCountries);
 
   // Parse subcategories from env
   const subCategories = process.env.VISA_SUBCATEGORIES
