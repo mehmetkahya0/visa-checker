@@ -11,17 +11,33 @@ bashio::log.info "📝 Creating configuration from add-on options..."
 # Function to safely join array values
 safe_join() {
     local config_key="$1"
+    bashio::log.info "🔍 Debug: Checking config key '$config_key'"
+    
     if bashio::config.has_value "$config_key"; then
-        # Try to parse as array and join with comma
-        local result=$(bashio::config "$config_key" | jq -r 'if type == "array" and length > 0 then join(",") elif type == "string" and length > 0 then . else empty end' 2>/dev/null)
+        local raw_value=$(bashio::config "$config_key" 2>/dev/null)
+        bashio::log.info "🔍 Debug: Raw value for '$config_key': '$raw_value'"
+        
+        # Try to parse as array and join with comma using jq
+        local result=$(echo "$raw_value" | jq -r 'if type == "array" and length > 0 then join(",") elif type == "string" and length > 0 then . else empty end' 2>/dev/null)
+        bashio::log.info "🔍 Debug: jq result for '$config_key': '$result'"
+        
         # If jq fails or returns empty, try direct string approach
         if [ -z "$result" ]; then
-            result=$(bashio::config "$config_key" 2>/dev/null | tr -d '[]"' | tr ' ' ',')
-            # Clean up multiple commas and trim
-            result=$(echo "$result" | sed 's/,,*/,/g' | sed 's/^,\|,$//g')
+            bashio::log.info "🔍 Debug: jq failed, trying manual parsing for '$config_key'"
+            # Handle different possible formats
+            if [[ "$raw_value" == \[*\] ]]; then
+                # Array format like ["grc","deu","ita"]
+                result=$(echo "$raw_value" | tr -d '[]"' | tr ' ' ',' | sed 's/,,*/,/g' | sed 's/^,\|,$//g')
+            else
+                # Direct string
+                result="$raw_value"
+            fi
+            bashio::log.info "🔍 Debug: Manual parsing result for '$config_key': '$result'"
         fi
+        
         echo "$result"
     else
+        bashio::log.info "🔍 Debug: Config key '$config_key' has no value"
         echo ""
     fi
 }
@@ -50,8 +66,22 @@ sed -i "s|%CHECK_INTERVAL%|$(bashio::config 'check_interval')|g" /app/.env
 sed -i "s|%TARGET_COUNTRY%|$(bashio::config 'target_country')|g" /app/.env
 
 # Debug mission countries before replacement
+bashio::log.info "🔍 Debug: About to parse mission_countries..."
 MISSION_COUNTRIES_VALUE="$(safe_join 'mission_countries')"
 bashio::log.info "🔍 Debug: MISSION_COUNTRIES_VALUE before sed: '$MISSION_COUNTRIES_VALUE'"
+
+# Check if the value is empty and try alternative approach
+if [ -z "$MISSION_COUNTRIES_VALUE" ]; then
+    bashio::log.info "🔍 Debug: MISSION_COUNTRIES_VALUE is empty, trying direct bashio::config approach..."
+    MISSION_COUNTRIES_RAW=$(bashio::config 'mission_countries' 2>/dev/null || echo "ERROR_READING_CONFIG")
+    bashio::log.info "🔍 Debug: Direct bashio::config result: '$MISSION_COUNTRIES_RAW'"
+    
+    # Try to handle it manually if it's an array
+    if [[ "$MISSION_COUNTRIES_RAW" == \[*\] ]]; then
+        MISSION_COUNTRIES_VALUE=$(echo "$MISSION_COUNTRIES_RAW" | sed 's/\[//g' | sed 's/\]//g' | sed 's/"//g' | sed 's/ //g')
+        bashio::log.info "🔍 Debug: Manual parsing result: '$MISSION_COUNTRIES_VALUE'"
+    fi
+fi
 
 sed -i "s|%MISSION_COUNTRY%|$MISSION_COUNTRIES_VALUE|g" /app/.env
 sed -i "s|%CITIES%|$(safe_join 'target_cities')|g" /app/.env
