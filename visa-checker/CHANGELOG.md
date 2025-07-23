@@ -2,6 +2,10 @@
 
 Bu dosya, Visa Checker Bot Home Assistant Add-on'unun tüm önemli değişikliklerini belgelemektedir.
 
+
+##  [1.1.2] - 2025-07-23
+- **Bildirim sistemi düzeltildi**
+
 ## [1.1.1] - 2025-07-23
 
 ### 🔔 Yeni Özellikler
