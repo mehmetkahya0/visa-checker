@@ -292,6 +292,8 @@ class TelegramService {
         "/bildirim aç - Her kontrol sonucunu bildir",
         "/bildirim kapat - Sadece randevu bulunca bildir",
         "/bildirim - Mevcut bildirim durumunu göster",
+        "/bildirim_ac - Hızlı açma (underscore ile)",
+        "/bildirim_kapat - Hızlı kapatma (underscore ile)",
         "",
         "🔧 *Bot Özellikleri:*",
         "• Otomatik randevu kontrolü",
@@ -600,6 +602,45 @@ class TelegramService {
       }
     });
 
+    // /bildirim_ac komutu - Hızlı açma
+    this.bot.command('bildirim_ac', async (ctx) => {
+      const wasEnabled = this.checkNotificationsEnabled;
+      this.setCheckNotifications(true);
+
+      if (!wasEnabled) {
+        await ctx.reply(
+          "🔔 *Deneme Bildirimleri Açıldı*\n\n" +
+          "✅ Artık her 5 dakikalık otomatik kontrol sonucu size bildirilecek.\n\n" +
+          "📊 Bu sayede randevu bulunamasa bile bot'un aktif çalıştığından emin olabilirsiniz.\n\n" +
+          "💡 Kapatmak için: /bildirim_kapat",
+          { parse_mode: "Markdown" }
+        );
+      } else {
+        await ctx.reply(
+          "ℹ️ Deneme bildirimleri zaten açık.\n\n💡 Durumu görmek için: /bildirim"
+        );
+      }
+    });
+
+    // /bildirim_kapat komutu - Hızlı kapatma
+    this.bot.command('bildirim_kapat', async (ctx) => {
+      const wasEnabled = this.checkNotificationsEnabled;
+      this.setCheckNotifications(false);
+
+      if (wasEnabled) {
+        await ctx.reply(
+          "🔕 *Deneme Bildirimleri Kapatıldı*\n\n" +
+          "❌ Artık sadece açık randevu bulunduğunda bildirim alacaksınız.\n\n" +
+          "💡 Tekrar açmak için: /bildirim_ac",
+          { parse_mode: "Markdown" }
+        );
+      } else {
+        await ctx.reply(
+          "ℹ️ Deneme bildirimleri zaten kapalı.\n\n💡 Durumu görmek için: /bildirim"
+        );
+      }
+    });
+
     // Bilinmeyen komutlar için
     this.bot.on('text', (ctx) => {
       const text = ctx.message.text;
@@ -619,6 +660,8 @@ class TelegramService {
           "/version - Versiyon bilgisi",
           "/arama - Manuel randevu arama",
           "/bildirim - Deneme bildirimleri",
+          "/bildirim_ac - Bildirimleri aç",
+          "/bildirim_kapat - Bildirimleri kapat",
           "/help - Detaylı yardım",
           "",
           "💡 Daha fazla bilgi için /help komutunu kullanın."
