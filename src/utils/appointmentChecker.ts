@@ -10,6 +10,14 @@ import { extractCity } from "./cityExtractor";
  * Yeni randevuları kontrol eder ve uygun olanları Telegram'a gönderir
  */
 export async function checkAppointments(): Promise<void> {
+  const startTime = new Date().toISOString();
+  console.log(`\n🔍 RANDEVU KONTROLÜ BAŞLADI - ${startTime}`);
+  console.log(`📊 Kontrol parametreleri:`);
+  console.log(`   - Hedef ülke: ${config.app.targetCountry}`);
+  console.log(`   - Hedef şehirler: ${config.app.targetCities.join(', ') || 'Tümü'}`);
+  console.log(`   - Hedef mission ülkeler: ${config.app.missionCountries.join(', ')}`);
+  console.log(`   - Debug modu: ${config.app.debug}`);
+  
   try {
     const appointments = await fetchAppointments();
 
@@ -60,14 +68,17 @@ export async function checkAppointments(): Promise<void> {
     // Kontrol sonucunu bildir (bildirimler açıksa)
     await telegramService.sendCheckResult(appointments.length, validAppointmentsCount);
     
+    const endTime = new Date().toISOString();
     if (newAppointmentsCount > 0) {
       console.log(`✅ ${newAppointmentsCount} yeni randevu bildirimi gönderildi`);
     } else {
       console.log(`ℹ️ Yeni randevu bulunamadı. Toplam kontrol edilen: ${appointments.length}, Geçerli: ${validAppointmentsCount}`);
     }
+    console.log(`⏱️ RANDEVU KONTROLÜ TAMAMLANDI - ${endTime}\n`);
     
   } catch (error) {
-    console.error("Randevu kontrolü sırasında hata:", error);
+    const errorTime = new Date().toISOString();
+    console.error(`❌ RANDEVU KONTROLÜ HATASI - ${errorTime}:`, error);
     
     // Kritik hataları Telegram'a bildir
     if (error instanceof Error) {

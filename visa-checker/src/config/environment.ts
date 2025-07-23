@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import cron from "node-cron";
 
 dotenv.config();
 
@@ -87,6 +88,36 @@ function validateEnvironment(): EnvironmentConfig {
     ? process.env.VISA_SUBCATEGORIES.split(",").map((cat) => cat.trim())
     : [];
 
+  // Validate CRON format
+  const rawCheckInterval = process.env.CHECK_INTERVAL || "*/5 * * * *";
+  console.log(`🔍 Environment Debug - CHECK_INTERVAL: "${rawCheckInterval}"`);
+  
+  // CRON format doğrulaması
+  let checkInterval = rawCheckInterval;
+  if (!cron.validate(rawCheckInterval)) {
+    console.error(`❌ Geçersiz CRON formatı tespit edildi: "${rawCheckInterval}"`);
+    console.error(`ℹ️ Geçerli CRON format örnekleri:`);
+    console.error(`   - Her dakika: "* * * * *"`);
+    console.error(`   - Her 2 dakika: "*/2 * * * *"`);
+    console.error(`   - Her 5 dakika: "*/5 * * * *"`);
+    console.error(`   - Her saat başı: "0 * * * *"`);
+    
+    // Varsayılan değere dön
+    checkInterval = "*/5 * * * *";
+    console.warn(`⚠️ Varsayılan CRON formatına dönülüyor: "${checkInterval}"`);
+  } else {
+    console.log(`✅ CRON formatı geçerli: "${checkInterval}"`);
+  }
+
+  // Target country doğrulaması ve dönüşümü
+  let targetCountry = process.env.TARGET_COUNTRY?.toLowerCase() || "tur";
+  
+  // "tr" -> "tur" dönüşümü
+  if (targetCountry === "tr") {
+    targetCountry = "tur";
+    console.log(`🔄 Target country "tr" -> "tur" olarak dönüştürüldü`);
+  }
+
   // Yapılandırma nesnesini oluştur ve döndür
   return {
     telegram: {
@@ -96,9 +127,8 @@ function validateEnvironment(): EnvironmentConfig {
       retryAfter: Number(process.env.TELEGRAM_RETRY_AFTER) || 5000,
     },
     app: {
-      checkInterval: process.env.CHECK_INTERVAL || "*/5 * * * *",
-      // The target country should be a lower-case country code (e.g., "tur", "gbr"). Defaults to "tur".
-      targetCountry: process.env.TARGET_COUNTRY?.toLowerCase() || "tur",
+      checkInterval: checkInterval,
+      targetCountry: targetCountry,
       targetCities: cities,
       missionCountries,
       targetSubCategories: subCategories,

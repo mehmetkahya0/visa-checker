@@ -22,11 +22,31 @@ async function startApplication(): Promise<void> {
     // Başlangıç bildirimini gönder
     await telegramService.sendStartupNotification();
 
+    // CRON formatını doğrula
+    if (!cron.validate(config.app.checkInterval)) {
+      console.error(`❌ Geçersiz CRON formatı: ${config.app.checkInterval}`);
+      throw new Error(`Geçersiz CRON formatı: ${config.app.checkInterval}`);
+    }
+
     // Zamanlanmış görevi başlat
-    cron.schedule(config.app.checkInterval, checkAppointments);
+    const cronJob = cron.schedule(config.app.checkInterval, async () => {
+      console.log(`🔄 Zamanlanmış kontrol başlatılıyor - ${new Date().toISOString()}`);
+      try {
+        await checkAppointments();
+        console.log(`✅ Zamanlanmış kontrol tamamlandı - ${new Date().toISOString()}`);
+      } catch (error) {
+        console.error(`❌ Zamanlanmış kontrol hatası: ${error}`);
+        await telegramService.sendErrorNotification('Zamanlanmış kontrol hatası', String(error));
+      }
+    }, {
+      scheduled: true,
+      timezone: "Europe/Istanbul"
+    });
     
     console.log(`🔍 Configuration loaded successfully:`);
-    console.log(`Vize randevu kontrolü başlatıldı. Kontrol sıklığı: ${config.app.checkInterval}`);
+    console.log(`✅ Vize randevu kontrolü başlatıldı. Kontrol sıklığı: ${config.app.checkInterval}`);
+    console.log(`⏰ CRON Job başarıyla oluşturuldu ve çalışıyor`);
+    console.log(`🕐 Bir sonraki çalışma zamanı: ${new Date(Date.now() + 60000).toISOString()} (yaklaşık)`);
     console.log(`🎯 Target Country: ${config.app.targetCountry}`);
     console.log(`🏛️ Mission Countries: ${config.app.missionCountries.join(', ')}`);
     if (config.app.targetCities.length > 0) {
@@ -38,7 +58,15 @@ async function startApplication(): Promise<void> {
     console.log(`🐛 Debug Mode: ${config.app.debug}`);
 
     // İlk kontrolü yap
+    console.log(`🚀 İlk manuel kontrol başlatılıyor...`);
     void checkAppointments();
+
+    // CRON job test - 30 saniye sonra durum kontrolü
+    setTimeout(() => {
+      console.log(`⏰ 30 saniye geçti - CRON job çalışıyor mu kontrol ediliyor...`);
+      console.log(`📅 Şu anki zaman: ${new Date().toISOString()}`);
+      console.log(`🔄 Bir sonraki kontrol bekleniyor...`);
+    }, 30000);
 
     // Graceful shutdown handler
     setupGracefulShutdown();

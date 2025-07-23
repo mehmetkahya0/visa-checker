@@ -639,6 +639,44 @@ class TelegramService {
       }
     });
 
+    // /debug komutu - CRON job test etme
+    this.bot.command('debug', async (ctx) => {
+      try {
+        const debugMessage = [
+          "🔧 *Debug Bilgileri*",
+          "",
+          `📅 Şu anki zaman: ${new Date().toISOString()}`,
+          `📍 Türkiye saati: ${new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}`,
+          `🔄 CRON Pattern: ${this.formatAsCode(config.app.checkInterval)}`,
+          `⏰ Process uptime: ${this.formatUptime(process.uptime())}`,
+          `💾 Memory kullanımı: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
+          `🐛 Debug modu: ${config.app.debug ? 'Açık' : 'Kapalı'}`,
+          "",
+          "🧪 *Test Kontrolü Başlatılıyor...*",
+          "Manuel kontrol tetikleniyor, sonucu bekleyin..."
+        ].join("\n");
+
+        await ctx.reply(debugMessage, { parse_mode: "Markdown" });
+
+        // Manuel kontrol tetikle
+        const { checkAppointments } = await import('../utils/appointmentChecker');
+        await checkAppointments();
+        
+        await ctx.reply(
+          "✅ *Manuel kontrol tamamlandı!*\n\n" +
+          "📊 Sonuçları yukarıdaki mesajlarda görebilirsiniz.\n\n" +
+          "💡 CRON job çalışıyorsa otomatik kontroller devam edecek.",
+          { parse_mode: "Markdown" }
+        );
+        
+      } catch (error) {
+        await ctx.reply(
+          `❌ *Debug hatası:*\n\n\`${String(error)}\``,
+          { parse_mode: "Markdown" }
+        );
+      }
+    });
+
     // Bilinmeyen komutlar için
     this.bot.on('text', (ctx) => {
       const text = ctx.message.text;
@@ -658,8 +696,9 @@ class TelegramService {
           "/version - Versiyon bilgisi",
           "/arama - Manuel randevu arama",
           "/bildirim - Deneme bildirimleri",
-          "/bildirim_ac - Bildirimleri aç",
+          "/bildirim_ac - Bildirimleri aç", 
           "/bildirim_kapat - Bildirimleri kapat",
+          "/debug - Manuel kontrol testi",
           "/help - Detaylı yardım",
           "",
           "💡 Daha fazla bilgi için /help komutunu kullanın."

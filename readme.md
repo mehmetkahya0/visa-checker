@@ -2,6 +2,19 @@
 
 Bu bot, Schengen vizesi için randevu durumlarını otomatik olarak takip eder ve uygun randevular bulunduğunda Telegram üzerinden bildirim gönderir.
 
+## 🚨 ÖNEMLİ: Düzeltilmiş Versiyon
+
+**CRON job çalışmama sorunu düzeltildi!** Raspberry Pi ve Home Assistant kullanıcıları için optimize edilmiş versiyon:
+
+📁 **`visa-checker/visa-checker/` dizinini kullanın** - Ana dizin eski versiyon
+📁 **`visa-checker/visa-checker/README-FIXED.md`** dosyasında detaylı açıklamalar
+
+### ✅ Düzeltilen Ana Sorunlar:
+- CRON job otomatik kontrolleri çalışmıyor → **DÜZELTİLDİ**
+- check_interval formatı doğru çalışmıyor → **DÜZELTİLDİ**  
+- Manuel kontrol çalışıyor ama otomatik çalışmıyor → **DÜZELTİLDİ**
+- Debug ve monitoring eksik → **İYİLEŞTİRİLDİ**
+
 ## 📋 Özellikler
 
 - 🔄 Belirtilen aralıklarla otomatik randevu durumu kontrolü

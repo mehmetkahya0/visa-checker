@@ -87,6 +87,10 @@ function validateEnvironment(): EnvironmentConfig {
     ? process.env.VISA_SUBCATEGORIES.split(",").map((cat) => cat.trim())
     : [];
 
+  // Validate CRON format
+  const checkInterval = process.env.CHECK_INTERVAL || "*/5 * * * *";
+  console.log(`🔍 Environment Debug - CHECK_INTERVAL: "${checkInterval}"`);
+
   // Yapılandırma nesnesini oluştur ve döndür
   return {
     telegram: {
@@ -96,7 +100,7 @@ function validateEnvironment(): EnvironmentConfig {
       retryAfter: Number(process.env.TELEGRAM_RETRY_AFTER) || 5000,
     },
     app: {
-      checkInterval: process.env.CHECK_INTERVAL || "*/5 * * * *",
+      checkInterval: checkInterval,
       // The target country should be a lower-case country code (e.g., "tur", "gbr"). Defaults to "tur".
       // Convert "tr" to "tur" for Turkey
       targetCountry: (process.env.TARGET_COUNTRY?.toLowerCase() === "tr" ? "tur" : process.env.TARGET_COUNTRY?.toLowerCase()) || "tur",

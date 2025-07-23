@@ -10,17 +10,27 @@ import { extractCity } from "./cityExtractor";
  * Yeni randevuları kontrol eder ve uygun olanları Telegram'a gönderir
  */
 export async function checkAppointments(): Promise<void> {
+  const startTime = new Date().toISOString();
+  console.log(`\n🔍 RANDEVU KONTROLÜ BAŞLADI - ${startTime}`);
+  console.log(`📊 Kontrol parametreleri:`);
+  console.log(`   - Hedef ülke: ${config.app.targetCountry}`);
+  console.log(`   - Hedef şehirler: ${config.app.targetCities.length > 0 ? config.app.targetCities.join(', ') : 'Tümü'}`);
+  console.log(`   - Hedef mission ülkeler: ${config.app.missionCountries.join(', ')}`);
+  console.log(`   - Hedef vize tipleri: ${config.app.targetSubCategories.length > 0 ? config.app.targetSubCategories.join(', ') : 'Tümü'}`);
+  console.log(`   - Debug modu: ${config.app.debug}`);
+  
   try {
+    console.log(`📡 API'den randevular çekiliyor...`);
     const appointments = await fetchAppointments();
 
     if (appointments.length === 0) {
-      console.log("Randevu bulunamadı veya bir hata oluştu");
+      console.log("⚠️ Randevu bulunamadı veya bir hata oluştu");
       // Deneme bildirimi gönder (bildirimler açıksa)
       await telegramService.sendCheckResult(0, 0);
       return;
     }
 
-    console.log(`${appointments.length} randevu kontrol ediliyor...`);
+    console.log(`📋 ${appointments.length} randevu kontrol ediliyor...`);
     
     let validAppointmentsCount = 0;
     let newAppointmentsCount = 0;
@@ -60,26 +70,33 @@ export async function checkAppointments(): Promise<void> {
     // Kontrol sonucunu bildir (bildirimler açıksa)
     await telegramService.sendCheckResult(appointments.length, validAppointmentsCount);
     
+    const endTime = new Date().toISOString();
     if (newAppointmentsCount > 0) {
       console.log(`✅ ${newAppointmentsCount} yeni randevu bildirimi gönderildi`);
     } else {
       console.log(`ℹ️ Yeni randevu bulunamadı. Toplam kontrol edilen: ${appointments.length}, Geçerli: ${validAppointmentsCount}`);
     }
+    console.log(`⏱️ RANDEVU KONTROLÜ TAMAMLANDI - ${endTime}\n`);
     
   } catch (error) {
-    console.error("Randevu kontrolü sırasında hata:", error);
+    const errorTime = new Date().toISOString();
+    console.error(`❌ RANDEVU KONTROLÜ HATASI - ${errorTime}:`, error);
     
     // Kritik hataları Telegram'a bildir
-    if (error instanceof Error) {
-      await telegramService.sendErrorNotification(
-        'Randevu kontrolü hatası',
-        `${error.message}\n\nStack: ${error.stack?.substring(0, 500) || 'Yok'}`
-      );
-    } else {
-      await telegramService.sendErrorNotification(
-        'Randevu kontrolü hatası',
-        String(error)
-      );
+    try {
+      if (error instanceof Error) {
+        await telegramService.sendErrorNotification(
+          'Randevu kontrolü hatası',
+          `${error.message}\n\nStack: ${error.stack?.substring(0, 500) || 'Yok'}`
+        );
+      } else {
+        await telegramService.sendErrorNotification(
+          'Randevu kontrolü hatası',
+          String(error)
+        );
+      }
+    } catch (notificationError) {
+      console.error('Hata bildirimi gönderilemedi:', notificationError);
     }
   }
 }
