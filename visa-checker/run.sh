@@ -18,21 +18,35 @@ safe_join() {
     fi
 }
 
-cat > /app/.env << EOF
-TELEGRAM_BOT_TOKEN=$(bashio::config 'telegram_bot_token')
-TELEGRAM_CHANNEL_ID=$(bashio::config 'telegram_channel_id')
-CHECK_INTERVAL=$(bashio::config 'check_interval')
-TARGET_COUNTRY=$(bashio::config 'target_country')
-MISSION_COUNTRY=$(safe_join 'mission_countries')
-CITIES=$(safe_join 'target_cities')
-VISA_SUBCATEGORIES=$(safe_join 'target_visa_subcategories')
-DEBUG=$(bashio::config 'debug')
-VISA_API_URL=$(bashio::config 'api_url')
-MAX_RETRIES=$(bashio::config 'max_retries')
-RESTART_TOKEN=$(bashio::config 'restart_token')
+# Create the .env file with proper formatting
+cat > /app/.env << 'EOF'
+TELEGRAM_BOT_TOKEN=%TELEGRAM_BOT_TOKEN%
+TELEGRAM_CHANNEL_ID=%TELEGRAM_CHANNEL_ID%
+CHECK_INTERVAL=%CHECK_INTERVAL%
+TARGET_COUNTRY=%TARGET_COUNTRY%
+MISSION_COUNTRY=%MISSION_COUNTRY%
+CITIES=%CITIES%
+VISA_SUBCATEGORIES=%VISA_SUBCATEGORIES%
+DEBUG=%DEBUG%
+VISA_API_URL=%VISA_API_URL%
+MAX_RETRIES=%MAX_RETRIES%
+RESTART_TOKEN=%RESTART_TOKEN%
 NODE_ENV=production
 PORT=3000
 EOF
+
+# Replace placeholders with actual values
+sed -i "s|%TELEGRAM_BOT_TOKEN%|$(bashio::config 'telegram_bot_token')|g" /app/.env
+sed -i "s|%TELEGRAM_CHANNEL_ID%|$(bashio::config 'telegram_channel_id')|g" /app/.env
+sed -i "s|%CHECK_INTERVAL%|$(bashio::config 'check_interval')|g" /app/.env
+sed -i "s|%TARGET_COUNTRY%|$(bashio::config 'target_country')|g" /app/.env
+sed -i "s|%MISSION_COUNTRY%|$(safe_join 'mission_countries')|g" /app/.env
+sed -i "s|%CITIES%|$(safe_join 'target_cities')|g" /app/.env
+sed -i "s|%VISA_SUBCATEGORIES%|$(safe_join 'target_visa_subcategories')|g" /app/.env
+sed -i "s|%DEBUG%|$(bashio::config 'debug')|g" /app/.env
+sed -i "s|%VISA_API_URL%|$(bashio::config 'api_url')|g" /app/.env
+sed -i "s|%MAX_RETRIES%|$(bashio::config 'max_retries')|g" /app/.env
+sed -i "s|%RESTART_TOKEN%|$(bashio::config 'restart_token')|g" /app/.env
 
 bashio::log.info "✅ Configuration file created"
 
@@ -87,9 +101,29 @@ fi
 
 # Export environment variables properly
 bashio::log.info "🔧 Setting up environment variables..."
-set -a  # Automatically export all variables
-source /app/.env
-set +a  # Stop automatically exporting
+
+# Debug: Show .env content (first few lines, without sensitive data)
+bashio::log.info "🔍 Generated .env file content (first 5 lines):"
+head -5 /app/.env | while read line; do
+    if [[ "$line" == *"TOKEN"* ]]; then
+        bashio::log.info "  ${line%%=*}=***HIDDEN***"
+    else
+        bashio::log.info "  $line"
+    fi
+done
+
+# Use a more reliable method to export variables
+while IFS='=' read -r key value; do
+    # Skip empty lines and comments
+    [[ -z "$key" || "$key" =~ ^#.*$ ]] && continue
+    
+    # Remove any quotes from the value
+    value=$(echo "$value" | sed 's/^["\x27]*//; s/["\x27]*$//')
+    
+    # Export the variable
+    export "$key"="$value"
+    bashio::log.info "  ✓ Exported: $key"
+done < /app/.env
 
 # Verify critical environment variables are set
 if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
