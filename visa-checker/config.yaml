@@ -1,5 +1,5 @@
 name: "Visa Checker Bot"
-version: "1.0.4"
+version: "1.0.5"
 slug: "visa_checker"
 description: "Schengen vize randevu takip botu - otomatik bildirimler"
 url: "https://github.com/mehmetkahya0/visa-checker"

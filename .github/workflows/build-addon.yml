@@ -58,7 +58,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./visa-checker
           file: ./visa-checker/Dockerfile
           platforms: linux/${{ matrix.arch == 'aarch64' && 'arm64' || matrix.arch == 'amd64' && 'amd64' || matrix.arch == 'armhf' && 'arm/v6' || matrix.arch == 'armv7' && 'arm/v7' || matrix.arch == 'i386' && '386' }}
           push: true
