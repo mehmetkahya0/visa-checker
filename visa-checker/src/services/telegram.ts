@@ -890,18 +890,56 @@ class TelegramService {
       const botInfo = await this.bot.telegram.getMe();
       console.log(`🤖 Bot bilgisi: @${botInfo.username} (${botInfo.first_name})`);
       
+      // Chat ID doğrulaması yap
+      const chatIdValid = await this.validateChatId();
+      if (!chatIdValid) {
+        console.error("⚠️ Chat ID doğrulaması başarısız - bildirimler çalışmayabilir");
+        return;
+      }
+      
       // Test mesajı gönder (sadece debug modundaysa)
       if (config.app.debug) {
         await this.bot.telegram.sendMessage(
           config.telegram.channelId,
-          "🧪 *Bot Bağlantı Testi*\n\n✅ Bot başarıyla başlatıldı ve bağlantı test edildi.",
-          { parse_mode: "Markdown" }
+          "🧪 Bot Bağlantı Testi\n\n✅ Bot başarıyla başlatıldı ve bağlantı test edildi.",
         );
-        console.log("✅ Test mesajı gönderildi");
+        console.log("✅ Debug test mesajı gönderildi");
       }
     } catch (error) {
       console.error("⚠️ Bot bağlantı testi başarısız:", error);
-      // Test başarısız olsa da devam et, belki kanal ID'si yanlış
+      // Test başarısız olsa da devam et
+    }
+  }
+
+  /**
+   * Chat ID'nin geçerli olup olmadığını test eder
+   */
+  async validateChatId(): Promise<boolean> {
+    try {
+      console.log(`🔍 Chat ID doğrulanıyor: ${config.telegram.channelId}`);
+      
+      // Basit bir test mesajı gönder
+      await this.bot.telegram.sendMessage(
+        config.telegram.channelId,
+        "🧪 Chat ID Doğrulama Testi\n\n✅ Bu mesajı alıyorsanız Chat ID doğru!"
+      );
+      
+      console.log(`✅ Chat ID geçerli: ${config.telegram.channelId}`);
+      return true;
+    } catch (error: any) {
+      if (error?.response?.error_code === 400 && error?.response?.description?.includes('chat not found')) {
+        console.error(`❌ Chat ID bulunamadı: ${config.telegram.channelId}`);
+        console.error(`💡 Doğru Chat ID almak için:`);
+        console.error(`   1. Bot'a özel mesaj gönderin`);
+        console.error(`   2. /start komutunu kullanın`);
+        console.error(`   3. @userinfobot'a mesaj göndererek Chat ID'nizi öğrenin`);
+      } else if (error?.response?.error_code === 403) {
+        console.error(`❌ Bot bu chat'e erişim iznine sahip değil: ${config.telegram.channelId}`);
+        console.error(`💡 Bot'u gruba ekleyin veya özel mesajda /start komutunu kullanın`);
+      } else {
+        console.error(`❌ Chat ID doğrulama hatası:`, error?.response?.description || error?.message);
+      }
+      return false;
     }
   }
 
@@ -1032,9 +1070,20 @@ class TelegramService {
       const statusText = totalFound === -1 ? 'Hata' : (newFound > 0 ? 'Randevu bulundu' : 'Randevu bulunamadı');
       console.log(`📤 Kontrol sonucu bildirimi gönderildi: ${statusText}`);
       return true;
-    } catch (error) {
-      console.error("❌ Kontrol sonucu bildirimi gönderilirken hata:", error);
-      return false;
+    } catch (error: any) {
+      // Telegram-specific error handling
+      if (error?.response?.error_code === 400 && error?.response?.description?.includes('chat not found')) {
+        console.error(`❌ Telegram Chat ID hatalı: ${config.telegram.channelId}`);
+        console.error(`💡 Doğru Chat ID almak için bot'a mesaj gönderin ve /start komutunu kullanın`);
+        return false;
+      } else if (error?.response?.error_code === 403) {
+        console.error(`❌ Bot bu chat'e mesaj gönderme iznine sahip değil: ${config.telegram.channelId}`);
+        console.error(`💡 Bot'u chat'e ekleyin veya özel mesajda /start komutunu kullanın`);
+        return false;
+      } else {
+        console.error("❌ Kontrol sonucu bildirimi gönderilirken hata:", error);
+        return false;
+      }
     }
   }
 }
