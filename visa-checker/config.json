@@ -1,6 +1,6 @@
 {
   "name": "Visa Checker",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "slug": "visa_checker",
   "description": "Schengen vize randevu takip botu",
   "startup": "services",

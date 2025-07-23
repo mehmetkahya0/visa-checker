@@ -94,7 +94,9 @@ ports:
   3000/tcp: 3000
 ports_description:
   3000/tcp: "Web API interface"
-image: "ghcr.io/{arch}-addon-visa-checker"
+```
+
+**Note**: No `image:` field is specified, which means Home Assistant will build the add-on locally using the Dockerfile.
 ```
 
 ### `/config/addons/visa-checker/Dockerfile`
