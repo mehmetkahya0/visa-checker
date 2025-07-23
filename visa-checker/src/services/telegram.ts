@@ -367,7 +367,7 @@ class TelegramService {
       const versionMessage = [
         "🔢 *Vize Bot Versiyon Bilgisi*",
         "",
-        "📦 Bot Versiyonu: 1.1.0",
+        "📦 Bot Versiyonu: 1.1.3",
         "🤖 Telegram Bot API: Telegraf",
         "🗓️ Son Güncelleme: 23 Temmuz 2025",
         "🔔 Yeni Özellik: Deneme bildirimi sistemi",
@@ -559,10 +559,10 @@ class TelegramService {
           `📊 Mevcut Durum: ${currentStatus}`,
           "",
           "📋 *Kullanım:*",
-          "/bildirim_ac - Bildirimleri aç",
-          "/bildirim_kapat - Bildirimleri kapat",
+          "/bildirim\\_ac \\- Bildirimleri aç",
+          "/bildirim\\_kapat \\- Bildirimleri kapat",
           "",
-          "💡 Bu özellik açıldığında bot her 5 dakikalık kontrol sonucunu bildirir (randevu bulunmasa bile).",
+          "💡 Bu özellik açıldığında bot her 5 dakikalık kontrol sonucunu bildirir \\(randevu bulunmasa bile\\)\\.",
           "",
           `🔢 Son Kontrol: ${this.lastCheckCount} randevu kontrol edildi`,
           `⏰ Son Reset: ${new Date(this.lastReset).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}`
@@ -580,16 +580,16 @@ class TelegramService {
       if (shouldEnable && !wasEnabled) {
         await ctx.reply(
           "🔔 *Deneme Bildirimleri Açıldı*\n\n" +
-          "✅ Artık her 5 dakikalık otomatik kontrol sonucu size bildirilecek.\n\n" +
-          "📊 Bu sayede randevu bulunamasa bile bot'un aktif çalıştığından emin olabilirsiniz.\n\n" +
+          "✅ Artık her 5 dakikalık otomatik kontrol sonucu size bildirilecek\\.\n\n" +
+          "📊 Bu sayede randevu bulunamasa bile bot'un aktif çalıştığından emin olabilirsiniz\\.\n\n" +
           "💡 Kapatmak için: /bildirim kapat",
           { parse_mode: "Markdown" }
         );
       } else if (!shouldEnable && wasEnabled) {
         await ctx.reply(
           "🔕 *Deneme Bildirimleri Kapatıldı*\n\n" +
-          "❌ Artık sadece açık randevu bulunduğunda bildirim alacaksınız.\n\n" +
-          "💡 Tekrar açmak için: /bildirim_ac",
+          "❌ Artık sadece açık randevu bulunduğunda bildirim alacaksınız\\.\n\n" +
+          "💡 Tekrar açmak için: /bildirim\\_ac",
           { parse_mode: "Markdown" }
         );
       } else {
@@ -608,9 +608,9 @@ class TelegramService {
       if (!wasEnabled) {
         await ctx.reply(
           "🔔 *Deneme Bildirimleri Açıldı*\n\n" +
-          "✅ Artık her 5 dakikalık otomatik kontrol sonucu size bildirilecek.\n\n" +
-          "📊 Bu sayede randevu bulunamasa bile bot'un aktif çalıştığından emin olabilirsiniz.\n\n" +
-          "💡 Kapatmak için: /bildirim_kapat",
+          "✅ Artık her 5 dakikalık otomatik kontrol sonucu size bildirilecek\\.\n\n" +
+          "📊 Bu sayede randevu bulunamasa bile bot'un aktif çalıştığından emin olabilirsiniz\\.\n\n" +
+          "💡 Kapatmak için: /bildirim\\_kapat",
           { parse_mode: "Markdown" }
         );
       } else {
@@ -628,8 +628,8 @@ class TelegramService {
       if (wasEnabled) {
         await ctx.reply(
           "🔕 *Deneme Bildirimleri Kapatıldı*\n\n" +
-          "❌ Artık sadece açık randevu bulunduğunda bildirim alacaksınız.\n\n" +
-          "💡 Tekrar açmak için: /bildirim_ac",
+          "❌ Artık sadece açık randevu bulunduğunda bildirim alacaksınız\\.\n\n" +
+          "💡 Tekrar açmak için: /bildirim\\_ac",
           { parse_mode: "Markdown" }
         );
       } else {

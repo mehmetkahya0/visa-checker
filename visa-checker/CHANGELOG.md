@@ -2,6 +2,11 @@
 
 Bu dosya, Visa Checker Bot Home Assistant Add-on'unun tüm önemli değişikliklerini belgelemektedir.
 
+## [1.1.3] - 2025-07-23
+### 🔧 Düzeltmeler
+- **Telegram Markdown Hatası**: `/bildirim_ac` komutundaki markdown ayrıştırma hatası düzeltildi
+- **Komut Mesajları**: Tüm bildirim komutlarında markdown karakter kaçışları düzeltildi
+- **Bot Kararlılığı**: Telegram API entitesi hatalarının önlenmesi
 
 ##  [1.1.2] - 2025-07-23
 - **Bildirim sistemi düzeltildi**
