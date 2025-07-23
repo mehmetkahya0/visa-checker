@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  visa-checker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: visa-checker-bot
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - visa-checker-network
+    
+    # Resource limits (Raspberry Pi için optimize)
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+          cpus: '0.5'
+        reservations:
+          memory: 50M
+          cpus: '0.1'
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('health check')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis cache (isteğe bağlı - performans için)
+  redis:
+    image: redis:7-alpine
+    container_name: visa-checker-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - visa-checker-network
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.2'
+
+  # Watchtower - otomatik güncellemeler
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=86400  # 24 saat
+      - WATCHTOWER_INCLUDE_STOPPED=true
+    command: visa-checker-bot
+
+networks:
+  visa-checker-network:
+    driver: bridge
+
+volumes:
+  redis_data:

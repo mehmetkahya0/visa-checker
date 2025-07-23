@@ -1,0 +1,37 @@
+[Unit]
+Description=Visa Checker Bot
+Documentation=https://github.com/your-username/visa-checker
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/visa-checker
+Environment=NODE_ENV=production
+Environment=PATH=/usr/bin:/usr/local/bin
+ExecStart=/usr/local/bin/node dist/index.js
+ExecReload=/bin/kill -USR1 $MAINPID
+Restart=always
+RestartSec=10
+KillMode=mixed
+TimeoutStopSec=5
+SyslogIdentifier=visa-checker
+
+# Güvenlik ayarları
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/pi/visa-checker
+
+# Resource limits
+LimitNOFILE=65536
+MemoryMax=200M
+CPUQuota=50%
+
+# Logging
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target
