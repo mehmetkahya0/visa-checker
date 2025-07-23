@@ -2,6 +2,13 @@
 
 Bu dosya, Visa Checker Bot Home Assistant Add-on'unun tüm önemli değişikliklerini belgelemektedir.
 
+## [1.1.5] - 2025-07-23
+### 🔧 Kritik Düzeltme
+- **Deneme Bildirimi Eksikliği**: Add-on versiyonunda eksik olan `sendCheckResult` çağrısı eklendi
+- **Bildirim Sistemi**: Artık `/bildirim_ac` ile açılan bildirimlerin düzgün çalışması sağlandı
+- **Kontrol Sayacı**: Her 5 dakikalık kontrol sonuçları düzgün bildirilecek
+- **Log İyileştirmesi**: Daha detaylı kontrol ve bildirim logları
+
 ## [1.1.4] - 2025-07-23
 ### 🔧 Kritik Düzeltme
 - **Help Komut Hatası**: `/help` komutundaki markdown ayrıştırma hatası düzeltildi (byte offset 1286)

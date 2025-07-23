@@ -15,12 +15,21 @@ export async function checkAppointments(): Promise<void> {
 
     if (appointments.length === 0) {
       console.log("Randevu bulunamadı veya bir hata oluştu");
+      // Deneme bildirimi gönder (bildirimler açıksa)
+      await telegramService.sendCheckResult(0, 0);
       return;
     }
+
+    console.log(`${appointments.length} randevu kontrol ediliyor...`);
+    
+    let validAppointmentsCount = 0;
+    let newAppointmentsCount = 0;
 
     for (const appointment of appointments) {
       // First, check if the appointment is valid based on configured filters
       if (!isAppointmentValid(appointment)) continue;
+      
+      validAppointmentsCount++;
 
       // Create a unique key for the appointment using its ID
       const appointmentKey = cacheService.createKey(appointment);
@@ -40,12 +49,23 @@ export async function checkAppointments(): Promise<void> {
           );
         }
         await processNewAppointment(appointment, appointmentKey);
+        newAppointmentsCount++;
       } else if (config.app.debug) {
         console.log(
           `Randevu (ID: ${appointment.id}) zaten önbellekte. Atlanıyor.`
         );
       }
     }
+
+    // Kontrol sonucunu bildir (bildirimler açıksa)
+    await telegramService.sendCheckResult(appointments.length, validAppointmentsCount);
+    
+    if (newAppointmentsCount > 0) {
+      console.log(`✅ ${newAppointmentsCount} yeni randevu bildirimi gönderildi`);
+    } else {
+      console.log(`ℹ️ Yeni randevu bulunamadı. Toplam kontrol edilen: ${appointments.length}, Geçerli: ${validAppointmentsCount}`);
+    }
+    
   } catch (error) {
     console.error("Randevu kontrolü sırasında hata:", error);
     
