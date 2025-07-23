@@ -1,20 +1,20 @@
 {
   "name": "visa-checker",
-  "version": "1.0.1",
-  "description": "Schengen vizesi randevularını otomatik takip eden ve Telegram üzerinden bildirim gönderen bot",
+  "version": "1.1.0",
+  "description": "Schengen vizesi randevularını otomatik takip eden ve Telegram üzerinden bildirim gönderen bot - deneme bildirimi sistemi ile",
   "author": {
-    "name": "byigitt",
-    "email": "bbayburtlu@hotmail.com",
-    "url": "https://github.com/byigitt"
+    "name": "Mehmet Kahya",
+    "email": "mehmetkahya0@gmail.com",
+    "url": "https://github.com/mehmetkahya0"
   },
-  "homepage": "https://github.com/byigitt/visa-checker",
+  "homepage": "https://github.com/mehmetkahya0/visa-checker",
   "repository": {
     "type": "git",
-    "url": "https://github.com/byigitt/visa-checker.git"
+    "url": "https://github.com/mehmetkahya0/visa-checker.git"
   },
   "bugs": {
-    "url": "https://github.com/byigitt/visa-checker/issues",
-    "email": "bbayburtlu@hotmail.com"
+    "url": "https://github.com/mehmetkahya0/visa-checker/issues",
+    "email": "mehmetkahya0@gmail.com"
   },
   "keywords": [
     "schengen",

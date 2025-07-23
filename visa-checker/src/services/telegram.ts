@@ -367,9 +367,10 @@ class TelegramService {
       const versionMessage = [
         "🔢 *Vize Bot Versiyon Bilgisi*",
         "",
-        "📦 Bot Versiyonu: 1.0.1",
+        "📦 Bot Versiyonu: 1.1.0",
         "🤖 Telegram Bot API: Telegraf",
         "🗓️ Son Güncelleme: 23 Temmuz 2025",
+        "🔔 Yeni Özellik: Deneme bildirimi sistemi",
         "",
         "👨‍💻 Geliştirici: Mehmet Kahya"
       ].join("\n");

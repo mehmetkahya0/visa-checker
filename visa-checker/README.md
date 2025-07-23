@@ -10,13 +10,15 @@ Schengen vize randevularını otomatik takip eden ve Telegram bildirimleri gönd
 
 ## Özellikler
 
-- 🔄 Otomatik randevu kontrolü
-- 📱 Telegram bildirimleri
+- 🔄 Otomatik randevu kontrolü (her 5 dakika)
+- 📱 Telegram bildirimleri ve interaktif komutlar
 - 🌍 Ülke ve şehir bazında filtreleme
 - 🎯 Vize tipi filtreleme
 - 🚫 Tekrar bildirim engelleme
-- 📊 Web API ile izleme
+- � **YENİ!** Deneme bildirimi sistemi - her kontrol sonucunu görebilme
+- �📊 Web API ile izleme ve manuel kontrol
 - 🤖 Home Assistant entegrasyonu
+- 💬 15+ bot komutu ile tam kontrol
 
 ## Kurulum
 
@@ -96,6 +98,34 @@ rest_command:
     method: POST
 ```
 
+## 🤖 Bot Komutları
+
+Add-on çalıştırıldıktan sonra Telegram bot'u şu komutları destekler:
+
+### 📋 Temel Komutlar
+- `/start` - Bot hakkında bilgi ve hoş geldin mesajı
+- `/help` - Detaylı komut listesi ve kullanım kılavuzu
+- `/status` - Bot durumu, çalışma süresi ve ayarları
+- `/ping` - Bot bağlantı testi
+
+### 🔍 Randevu Komutları
+- `/arama` - Manuel randevu arama (1 dakika cooldown)
+- `/randevu` - Alternatif arama komutu
+- `/search` - İngilizce arama komutu
+
+### 🔔 YENİ! Bildirim Sistemi
+- `/bildirim` - Mevcut bildirim durumunu göster
+- `/bildirim aç` - Her kontrol sonucunu bildir
+- `/bildirim kapat` - Sadece randevu bulunca bildir
+
+💡 **Deneme Bildirimi Özelliği**: Bu özellik açıldığında bot her 5 dakikalık kontrol sonucunu bildirir (randevu bulunmasa bile). Bu sayede bot'un aktif çalıştığından emin olabilirsiniz.
+
+### 📊 İstatistik ve Bilgi
+- `/stats` - Bot istatistikleri ve önbellek bilgileri
+- `/config` - Detaylı konfigürasyon görüntüleme
+- `/uptime` - Bot çalışma süresi
+- `/version` - Versiyon bilgileri
+
 ## API Endpoints
 
 - `GET /health` - Health check
@@ -107,6 +137,18 @@ rest_command:
 ## Destek
 
 Sorunlar için [GitHub Issues](https://github.com/mehmetkahya0/visa-checker/issues) kullanın.
+
+## 👨‍💻 Geliştirici
+
+**Mehmet Kahya**
+- 🐙 GitHub: [@mehmetkahya0](https://github.com/mehmetkahya0)
+- 📧 Email: [mehmetkahya0@gmail.com](mailto:mehmetkahya0@gmail.com)
+
+## 🔄 Versiyon Geçmişi
+
+- **v1.1.0** (Mevcut) - Deneme bildirimi sistemi eklendi, bot komutları geliştirildi
+- **v1.0.8** - Kararlılık iyileştirmeleri
+- **v1.0.0** - İlk sürüm
 
 ## Lisans
 
