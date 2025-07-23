@@ -897,31 +897,126 @@ docker compose logs -f
 
 ---
 
-## ⚙️ Yapılandırma Seçenekleri (.env Dosyası)
+## 🚀 Raspberry Pi Kurulumu (Önerilen)
 
-### Telegram Ayarları
+### Hızlı Kurulum
+```bash
+# Raspberry Pi'de çalıştırın
+curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/visa-checker/main/quick-install-rpi.sh | bash
+```
 
-- `TELEGRAM_BOT_TOKEN`: **Zorunlu**. Telegram bot token'ınız.
-- `TELEGRAM_CHAT_ID`: **Zorunlu**. Telegram kanal/grup ID'niz.
-- `TELEGRAM_RATE_LIMIT_MINUTES` (Opsiyonel): Dakikada gönderilebilecek maksimum mesaj sayısı (Varsayılan: 15).
-- `TELEGRAM_RETRY_AFTER` (Opsiyonel): Rate limit aşıldığında beklenecek süre (milisaniye) (Varsayılan: 5000).
+### Manuel Kurulum
 
-### Randevu Takip Ayarları
+#### 1. Dosyaları Raspberry Pi'ye Aktarma
+```bash
+# Local bilgisayarınızdan:
+scp -r /path/to/visa-checker pi@RPI_IP_ADDRESS:~/
 
-- `CHECK_INTERVAL` (Opsiyonel): Randevu kontrolü sıklığı (Cron formatı, Varsayılan: `*/5 * * * *` - 5 dakikada bir).
-- `TARGET_COUNTRY` (Opsiyonel): Takip edilecek kaynak ülke kodu (API'deki `country_code`, küçük harfle, örn: `tur`, `gbr`). Varsayılan: `tur`. Tüm ülkeler için `all` yazılabilir.
-- `CITIES` (Opsiyonel): Takip edilecek şehirler (API'deki `center` alanından çıkarılır, virgülle ayrılır, büyük/küçük harf duyarsız). Boş bırakılırsa filtre uygulanmaz. Örnek `center` değerleri: `Netherlands Visa Application Centre - Antalya` için `Antalya`, `Bulgaria Visa Application Center, Ankara` için `Ankara`.
-- `MISSION_COUNTRY` (Opsiyonel): Randevusu takip edilecek **hedef ülke kodları** (API'deki `mission_code`, küçük harfle, virgülle ayrılır, örn: `nld,fra,deu`). Boş bırakılırsa varsayılan olarak `nld` kullanılır.
-- `VISA_SUBCATEGORIES` (Opsiyonel): Takip edilecek vize tipleri (API'deki `visa_type` alanıyla kısmi eşleşme, virgülle ayrılır, büyük/küçük harf duyarsız). Boş bırakılırsa filtre uygulanmaz. Örnekler: `Tourism`, `Job Seeker`, `Family visit`.
+# Veya Git ile:
+ssh pi@RPI_IP_ADDRESS
+git clone https://github.com/YOUR_USERNAME/visa-checker.git ~/visa-checker
+```
 
-### Sistem Ayarları
+#### 2. Bağımlılıkları Kurma
+```bash
+ssh pi@RPI_IP_ADDRESS
+cd ~/visa-checker
 
-- `VISA_API_URL` (Opsiyonel): Kullanılacak API adresi. (Varsayılan: `https://api.visasbot.com/api/visa/list`)
-- `MAX_RETRIES` (Opsiyonel): API hatalarında tekrar deneme sayısı (Varsayılan: 3).
-- `RETRY_DELAY_BASE` (Opsiyonel): API hataları arasında bekleme süresi (ms) (Varsayılan: 1000).
-- `MAX_CACHE_SIZE` (Opsiyonel): Önbellekteki maksimum randevu ID'si sayısı (Varsayılan: 1000).
-- `CACHE_CLEANUP_INTERVAL` (Opsiyonel): Önbellek boyut kontrolü ve temizleme sıklığı (ms) (Varsayılan: 86400000 - 24 saat).
-- `DEBUG` (Opsiyonel): Detaylı log kayıtları için hata ayıklama modu (`true`/`false`) (Varsayılan: `false`).
+# Node.js kurulumu (eğer yoksa)
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# PM2 kurulumu
+sudo npm install -g pm2
+
+# Proje bağımlılıkları
+npm install
+npm run build
+```
+
+#### 3. PM2 ile Çalıştırma
+```bash
+# PM2 ile başlat
+pm2 start ecosystem.config.js
+
+# Boot'ta otomatik başlatma
+pm2 startup
+pm2 save
+
+# Durum kontrolü
+pm2 status
+pm2 logs visa-checker
+```
+
+### Home Assistant Entegrasyonu
+
+Home Assistant kullanıyorsanız, bot'u izlemek için:
+
+```yaml
+# configuration.yaml
+sensor:
+  - platform: rest
+    resource: http://RPI_IP:3000/api/status
+    name: "Visa Bot Status"
+    value_template: "{{ value_json.status }}"
+    json_attributes:
+      - uptime
+      - messageCount
+    scan_interval: 60
+```
+
+Detaylı bilgi için `home-assistant-integration.md` dosyasına bakın.
+
+### Web API Endpoints
+- `GET /health` - Sağlık kontrolü
+- `GET /api/status` - Bot durumu ve istatistikleri
+- `GET /api/cache` - Önbellek bilgileri
+- `POST /api/search` - Manuel randevu arama
+- `POST /api/restart` - Bot'u yeniden başlatma (token gerekli)
+
+## 🏠 Home Assistant ile Docker Entegrasyonu
+
+Home Assistant kullanıyorsanız, visa-checker'ı aynı Docker environment'ta çalıştırabilirsiniz:
+
+### **Yöntem 1: Aynı Docker Compose (Önerilen)**
+```bash
+# Home Assistant + Visa Checker birlikte
+docker-compose -f docker-compose-homeassistant.yml up -d
+```
+
+### **Yöntem 2: Mevcut Home Assistant'a Ekleme**
+```bash
+# Setup script'ini çalıştırın
+./setup-with-homeassistant.sh
+```
+
+### **Yöntem 3: Home Assistant Add-on**
+Detaylı kurulum için `HOME_ASSISTANT_ADDON.md` dosyasına bakın.
+
+### Home Assistant Konfigürasyonu
+```yaml
+# configuration.yaml
+sensor:
+  - platform: rest
+    resource: http://visa-checker-bot:3000/api/status
+    name: "Visa Bot Status"
+    value_template: "{{ value_json.status }}"
+    json_attributes:
+      - uptime
+      - memory
+    scan_interval: 60
+
+rest_command:
+  restart_visa_bot:
+    url: "http://visa-checker-bot:3000/api/restart"
+    method: POST
+    headers:
+      Authorization: "Bearer YOUR_RESTART_TOKEN"
+```
+
+Detaylı entegrasyon için `home-assistant-integration.md` dosyasına bakın.
+
+---
 
 ## 📱 Bildirim Örneği
 

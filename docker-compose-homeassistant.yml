@@ -1,0 +1,83 @@
+# Home Assistant + Visa Checker Docker Compose
+version: '3.8'
+
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    volumes:
+      - ./homeassistant:/config
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - ha_network
+    ports:
+      - "8123:8123"
+
+  visa-checker:
+    build:
+      context: ./visa-checker
+      dockerfile: Dockerfile
+    container_name: visa-checker-bot
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - ./visa-checker/.env
+    volumes:
+      - ./visa-checker/logs:/app/logs
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - ha_network
+    ports:
+      - "3000:3000"  # Home Assistant'tan erişim için
+    
+    # Resource limits (Raspberry Pi için)
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+          cpus: '0.5'
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    
+    # Bot dependency (opsiyonel)
+    depends_on:
+      - homeassistant
+
+  # Redis cache (opsiyonel performans artışı için)
+  redis:
+    image: redis:7-alpine
+    container_name: visa-checker-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 50mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - ha_network
+
+  # Watchtower - otomatik güncellemeler
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=86400  # 24 saat
+      - WATCHTOWER_INCLUDE_STOPPED=true
+    command: visa-checker-bot homeassistant
+
+networks:
+  ha_network:
+    driver: bridge
+
+volumes:
+  redis_data:

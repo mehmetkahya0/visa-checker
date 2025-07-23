@@ -1,0 +1,41 @@
+{
+  "name": "Visa Checker",
+  "version": "1.0.1",
+  "slug": "visa_checker",
+  "description": "Schengen vize randevu takip botu",
+  "startup": "services",
+  "boot": "auto",
+  "init": false,
+  "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
+  "ports": {
+    "3000/tcp": 3000
+  },
+  "map": ["share:rw"],
+  "options": {
+    "telegram_bot_token": "",
+    "telegram_channel_id": "",
+    "check_interval": "*/5 * * * *",
+    "target_country": "tr",
+    "mission_countries": ["de", "at", "nl", "be", "fr", "it", "es"],
+    "target_cities": [],
+    "target_visa_subcategories": [],
+    "debug": false,
+    "api_url": "https://api.visasbot.com/api/visa/list",
+    "max_retries": 3,
+    "restart_token": "change_me_secure_token"
+  },
+  "schema": {
+    "telegram_bot_token": "str",
+    "telegram_channel_id": "str",
+    "check_interval": "str",
+    "target_country": "str",
+    "mission_countries": ["str"],
+    "target_cities": ["str"],
+    "target_visa_subcategories": ["str"],
+    "debug": "bool",
+    "api_url": "url",
+    "max_retries": "int",
+    "restart_token": "str"
+  },
+  "image": "ghcr.io/mehmetkahya0/visa-checker-{arch}"
+}
