@@ -12,7 +12,14 @@ bashio::log.info "📝 Creating configuration from add-on options..."
 safe_join() {
     local config_key="$1"
     if bashio::config.has_value "$config_key"; then
-        local result=$(bashio::config "$config_key" | jq -r 'if type == "array" and length > 0 then join(",") else empty end' 2>/dev/null)
+        # Try to parse as array and join with comma
+        local result=$(bashio::config "$config_key" | jq -r 'if type == "array" and length > 0 then join(",") elif type == "string" and length > 0 then . else empty end' 2>/dev/null)
+        # If jq fails or returns empty, try direct string approach
+        if [ -z "$result" ]; then
+            result=$(bashio::config "$config_key" 2>/dev/null | tr -d '[]"' | tr ' ' ',')
+            # Clean up multiple commas and trim
+            result=$(echo "$result" | sed 's/,,*/,/g' | sed 's/^,\|,$//g')
+        fi
         echo "$result"
     else
         echo ""
@@ -41,7 +48,12 @@ sed -i "s|%TELEGRAM_BOT_TOKEN%|$(bashio::config 'telegram_bot_token')|g" /app/.e
 sed -i "s|%TELEGRAM_CHAT_ID%|$(bashio::config 'telegram_channel_id')|g" /app/.env
 sed -i "s|%CHECK_INTERVAL%|$(bashio::config 'check_interval')|g" /app/.env
 sed -i "s|%TARGET_COUNTRY%|$(bashio::config 'target_country')|g" /app/.env
-sed -i "s|%MISSION_COUNTRY%|$(safe_join 'mission_countries')|g" /app/.env
+
+# Debug mission countries before replacement
+MISSION_COUNTRIES_VALUE="$(safe_join 'mission_countries')"
+bashio::log.info "🔍 Debug: MISSION_COUNTRIES_VALUE before sed: '$MISSION_COUNTRIES_VALUE'"
+
+sed -i "s|%MISSION_COUNTRY%|$MISSION_COUNTRIES_VALUE|g" /app/.env
 sed -i "s|%CITIES%|$(safe_join 'target_cities')|g" /app/.env
 sed -i "s|%VISA_SUBCATEGORIES%|$(safe_join 'target_visa_subcategories')|g" /app/.env
 sed -i "s|%DEBUG%|$(bashio::config 'debug')|g" /app/.env
@@ -73,7 +85,11 @@ fi
 
 # Log configuration info
 bashio::log.info "🎯 Target Country: $(bashio::config 'target_country')"
+
+# Debug mission countries parsing
+bashio::log.info "🔍 Debug: Raw mission_countries config: $(bashio::config 'mission_countries' 2>/dev/null || echo 'NOT_FOUND')"
 bashio::log.info "🏛️ Mission Countries: $(safe_join 'mission_countries')"
+
 bashio::log.info "🔄 Check Interval: $(bashio::config 'check_interval')"
 bashio::log.info "🐛 Debug Mode: $(bashio::config 'debug')"
 
@@ -112,6 +128,9 @@ head -10 /app/.env | while read line; do
         bashio::log.info "  $line"
     fi
 done
+
+# Also show MISSION_COUNTRY line specifically
+bashio::log.info "🔍 MISSION_COUNTRY line from .env: $(grep '^MISSION_COUNTRY=' /app/.env || echo 'NOT_FOUND')"
 
 # Use a more reliable method to export variables
 while IFS='=' read -r key value; do
