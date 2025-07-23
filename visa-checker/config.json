@@ -1,6 +1,6 @@
 {
   "name": "Visa Checker",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "slug": "visa_checker",
   "description": "Schengen vize randevu takip botu",
   "startup": "services",
@@ -16,7 +16,7 @@
     "telegram_channel_id": "",
     "check_interval": "*/5 * * * *",
     "target_country": "tr",
-    "mission_countries": ["de", "at", "nl", "be", "fr", "it", "es"],
+    "mission_countries": ["grc", "deu", "ita"],
     "target_cities": [],
     "target_visa_subcategories": [],
     "debug": false,

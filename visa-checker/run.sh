@@ -12,7 +12,8 @@ bashio::log.info "📝 Creating configuration from add-on options..."
 safe_join() {
     local config_key="$1"
     if bashio::config.has_value "$config_key"; then
-        bashio::config "$config_key" | jq -r 'if type == "array" then join(",") else . end' 2>/dev/null || echo ""
+        local result=$(bashio::config "$config_key" | jq -r 'if type == "array" and length > 0 then join(",") else empty end' 2>/dev/null)
+        echo "$result"
     else
         echo ""
     fi
@@ -102,9 +103,9 @@ fi
 # Export environment variables properly
 bashio::log.info "🔧 Setting up environment variables..."
 
-# Debug: Show .env content (first few lines, without sensitive data)
-bashio::log.info "🔍 Generated .env file content (first 5 lines):"
-head -5 /app/.env | while read line; do
+# Debug: Show the generated .env file (first few lines, without sensitive data)
+bashio::log.info "🔍 Generated .env file content (first 10 lines):"
+head -10 /app/.env | while read line; do
     if [[ "$line" == *"TOKEN"* ]]; then
         bashio::log.info "  ${line%%=*}=***HIDDEN***"
     else
