@@ -36,6 +36,5 @@
     "api_url": "url",
     "max_retries": "int",
     "restart_token": "str"
-  },
-  "image": "ghcr.io/mehmetkahya0/visa-checker-{arch}"
+  }
 }

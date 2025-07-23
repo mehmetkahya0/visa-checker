@@ -1,0 +1,43 @@
+# Build artifacts
+dist/
+node_modules/
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Test files
+test/
+*.test.js
+*.test.ts
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Docker
+Dockerfile
+docker-compose*.yml
+
+# Home Assistant specific ignores
+visa-checker/
+.github/

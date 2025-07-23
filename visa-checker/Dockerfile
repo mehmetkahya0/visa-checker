@@ -11,22 +11,15 @@ RUN apk add --no-cache \
 # Set working directory
 WORKDIR /app
 
-# Copy package files first for better caching
-COPY package*.json ./
+# Copy everything from parent directory
+COPY .. .
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies and build
+RUN npm install && npm run build
 
-# Copy application source
-COPY src/ ./src/
-COPY tsconfig.json ./
-
-# Build TypeScript
-RUN npm run build
-
-# Copy run script
-COPY run.sh /
-RUN chmod a+x /run.sh
+# Copy run script to root
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
 
 # Create logs directory
 RUN mkdir -p /app/logs
