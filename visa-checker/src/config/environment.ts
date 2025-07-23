@@ -76,7 +76,7 @@ function validateEnvironment(): EnvironmentConfig {
     ? process.env.MISSION_COUNTRY.split(",")
         .map((country) => country.trim().toLowerCase())
         .filter((country) => country.length > 0) // Boş elemanları filtrele
-    : ["nld"]; // Varsayılan değer
+    : ["grc"]; // Varsayılan değer
 
   // Debug: Mission countries'i logla
   console.log(`🔍 Debug Environment: MISSION_COUNTRY env var: "${process.env.MISSION_COUNTRY}"`);
