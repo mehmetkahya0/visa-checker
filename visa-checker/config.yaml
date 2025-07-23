@@ -20,7 +20,7 @@ options:
   check_interval: "*/5 * * * *"
   target_country: "tr"
   mission_countries: ["grc", "deu", "ita"]
-  target_cities: []
+  target_cities: ["Izmir", "Antalya", "Fethiye"]
   target_visa_subcategories: []
   debug: false
   api_url: "https://api.visasbot.com/api/visa/list"
