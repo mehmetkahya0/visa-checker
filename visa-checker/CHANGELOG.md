@@ -2,6 +2,12 @@
 
 Bu dosya, Visa Checker Bot Home Assistant Add-on'unun tüm önemli değişikliklerini belgelemektedir.
 
+## [1.1.4] - 2025-07-23
+### 🔧 Kritik Düzeltme
+- **Help Komut Hatası**: `/help` komutundaki markdown ayrıştırma hatası düzeltildi (byte offset 1286)
+- **Parantez Kaçışı**: Help mesajındaki parantez ve nokta karakterleri düzgün kaçışlandı
+- **Bot Çökme Engellendi**: Help komutunun bot'u çöktürmesi sorunu giderildi
+
 ## [1.1.3] - 2025-07-23
 ### 🔧 Düzeltmeler
 - **Telegram Markdown Hatası**: `/bildirim_ac` komutundaki markdown ayrıştırma hatası düzeltildi

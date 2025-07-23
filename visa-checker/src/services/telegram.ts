@@ -299,16 +299,16 @@ class TelegramService {
         "• Rate limit yönetimi",
         "• Tekrar bildirim engelleme",
         "• Hata toleransı",
-        "• Her 5 dakikalık kontrol bildirimi (isteğe bağlı)",
+        "• Her 5 dakikalık kontrol bildirimi \\(isteğe bağlı\\)",
         "",
         "📱 *Kullanım İpuçları:*",
         "• Komutları hem özel mesajda hem de gruplarda kullanabilirsiniz",
         "• Bot 7/24 çalışarak sürekli randevuları kontrol eder",
         "• Uygun randevu bulunduğunda otomatik bildirim alırsınız",
-        "• /bildirim_ac ile her kontrol sonucunu görebilirsiniz",
+        "• /bildirim\\_ac ile her kontrol sonucunu görebilirsiniz",
         "• Deneme bildirimleri bot'un aktif çalıştığını doğrular",
         "",
-        "❓ Sorun yaşıyorsanız /ping ile bot bağlantısını test edin.",
+        "❓ Sorun yaşıyorsanız /ping ile bot bağlantısını test edin\\.",
         "- Mehmet Kahya"
       ].join("\n");
 
@@ -367,7 +367,7 @@ class TelegramService {
       const versionMessage = [
         "🔢 *Vize Bot Versiyon Bilgisi*",
         "",
-        "📦 Bot Versiyonu: 1.1.3",
+        "📦 Bot Versiyonu: 1.1.4",
         "🤖 Telegram Bot API: Telegraf",
         "🗓️ Son Güncelleme: 23 Temmuz 2025",
         "🔔 Yeni Özellik: Deneme bildirimi sistemi",
